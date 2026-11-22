@@ -71,7 +71,7 @@ async function refreshTrackedCharacters() {
     refreshBusy = false;
     if (refreshQueued) {
       refreshQueued = false;
-      void readSelection();
+      void refreshTrackedCharacters();
     }
   }
 }
@@ -193,7 +193,7 @@ async function testTick() {
       });
     }
     notify(`Test only: consumed one Bleed charge on ${targets.length} character(s). HP was not changed.`);
-    await readSelection();
+    await refreshTrackedCharacters();
   } catch (error) {
     console.error("Effect Tracker test tick error", error);
     notify(`Could not consume Bleed charge: ${error?.message || error}`);
@@ -217,7 +217,7 @@ OBR.onReady(() => {
       $("refresh").addEventListener("click", refreshTrackedCharacters);
       $("reload-effects").addEventListener("click", refreshTrackedCharacters);
 
-      OBR.contextMenu.create({
+      await OBR.contextMenu.create({
         id: "com.effect-tracker/context-menu",
         icons: [
           {
@@ -226,7 +226,7 @@ OBR.onReady(() => {
             filter: {
               every: [
                 { key: "layer", value: "CHARACTER" },
-                { key: ["metadata", NS, "tracked"], value: true, operator: "!=" }
+                { key: ["metadata", NS], value: undefined }
               ]
             }
           },
@@ -241,8 +241,10 @@ OBR.onReady(() => {
             }
           }
         ],
-        async onClick(context, elementId) {
-          const shouldAssign = elementId === "assign";
+        async onClick(context) {
+          const shouldAssign = context.items.every(
+            (item) => item.metadata?.[NS]?.tracked !== true
+          );
           await OBR.scene.items.updateItems(context.items, (items) => {
             for (const item of items) {
               const current = item.metadata?.[NS] ?? { effects: {} };
@@ -273,7 +275,7 @@ OBR.onReady(() => {
         }
       });
       OBR.scene.onReadyChange((ready) => {
-        if (ready) void readSelection();
+        if (ready) void refreshTrackedCharacters();
       });
 
       await refreshTrackedCharacters();
