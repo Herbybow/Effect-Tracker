@@ -1,6 +1,6 @@
 # Effect Tracker — v0.1.2
 
-https://herbybow.github.io/effect-tracker/manifest.json
+https://herbybow.github.io/Effect-Tracker/manifest.json
 
 
 IF ""https://herbybow.github.io/effect-tracker/manifest.json"" doesn't open in Browser, tcheck if latest Deployment has green checkmark 
