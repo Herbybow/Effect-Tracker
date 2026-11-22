@@ -7,7 +7,7 @@
     "build": "vite build"
   },
   "dependencies": {
-    "@owlbear-rodeo/sdk": "1.5.2"
+    "@owlbear-rodeo/sdk": "3.1.0"
   },
   "devDependencies": {
     "vite": "^6.0.0"
