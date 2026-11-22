@@ -12,4 +12,4 @@ body{color:#fff}
 :not(html):not(body)::-webkit-scrollbar:vertical{width:10px}
 :not(html):not(body)::-webkit-scrollbar-thumb{background:rgba(255,255,255,.5);border-radius:16px;border:2px solid transparent;background-clip:padding-box}
 
-.initiative-bleed-icon{width:16px;height:16px;object-fit:contain;flex:0 0 auto}.initiative-bleed-damage{color:#ff3030!important;font-weight:800!important;margin-left:auto;text-align:right;min-width:34px}
+.initiative-bleed-icon{width:24px;height:24px;object-fit:contain;flex:0 0 auto}.initiative-bleed-damage{color:#ff3030!important;font-weight:800!important;margin-left:auto;text-align:right;min-width:34px}
