@@ -226,7 +226,7 @@ OBR.onReady(() => {
             filter: {
               every: [
                 { key: "layer", value: "CHARACTER" },
-                { key: ["metadata", NS], value: undefined }
+                { key: ["metadata", NS, "tracked"], value: undefined }
               ]
             }
           },
