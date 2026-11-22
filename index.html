@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Effect Tracker</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="brand"><img src="./icon.svg" alt=""/><div><h1>Effect Tracker</h1><p>Version 0.1.2 · Bleed prototype</p></div></div>
+      <button id="refresh" class="quiet" title="Refresh selected token">↻</button>
+    </header>
+
+    <section class="panel">
+      <div class="section-title"><h2>Selected character</h2><span id="selection-count" class="pill">0 selected</span></div>
+      <p id="selection-label" class="muted">Waiting for Owlbear Rodeo…</p>
+      <p id="connection-status" class="hint">Loading Effect Tracker script…</p>
+      <div id="selection-list" class="token-list"></div>
+    </section>
+
+    <section class="panel">
+      <div class="section-title"><h2>Current</h2><span class="pill">Selected token(s)</span></div>
+      <div id="current-effects" class="empty">Select a character to see its current effects.</div>
+    </section>
+
+    <section class="panel bleed-panel">
+      <div class="effect-heading"><div class="drop">♥</div><div><h2>Bleed</h2><p class="muted">Choose a power to apply it to the selected character(s)</p></div></div>
+      <div class="tiers" id="tiers">
+        <button data-tier="1">3x1</button>
+        <button data-tier="2">3x2</button>
+        <button data-tier="3">3x3</button>
+        <button data-tier="4">3x4</button>
+        <button data-tier="5">3x5</button>
+      </div>
+      <p class="hint">Clicking a power applies or refreshes Bleed immediately. Each application has three charges.</p>
+    </section>
+
+    <section class="panel">
+      <div class="section-title"><h2>Active Effect</h2><button id="reload-effects" class="text-button">Refresh</button></div>
+      <div id="effects" class="empty">No active effect on the selected character(s).</div>
+      <button id="test-tick" class="secondary" disabled>Test: consume one Bleed charge</button>
+      <p class="warning">Test only: consumes a charge but does not change HP. Automatic initiative and Trackers HP integration are not connected yet.</p>
+    </section>
+    <footer>Effect data is stored on each Owlbear scene item under a private Effect Tracker metadata key.</footer>
+    <div id="toast" role="status" aria-live="polite"></div>
+  </main>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

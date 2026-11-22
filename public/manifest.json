@@ -1,0 +1,14 @@
+{
+  "name": "Effect Tracker",
+  "version": "0.1.2",
+  "manifest_version": 1,
+  "author": "Custom extension",
+  "description": "Token-based status effects for Owlbear Rodeo. First prototype: Bleed.",
+  "action": {
+    "title": "Effect Tracker",
+    "icon": "/icon.svg",
+    "popover": "/",
+    "height": 620,
+    "width": 360
+  }
+}
