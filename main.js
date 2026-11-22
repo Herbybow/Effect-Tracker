@@ -1,18 +1,4 @@
-let OBR;
-
-try {
-  const sdk = await import(
-  "https://cdn.jsdelivr.net/npm/@owlbear-rodeo/sdk@1.5.2/+esm"
-);
-  OBR = sdk.default;
-} catch (error) {
-  const status = document.getElementById("connection-status");
-  if (status) {
-    status.textContent = `SDK loading failed: ${error.message}`;
-  }
-  console.error("Effect Tracker SDK loading failed, BECAUSE :", error);
-  throw error;
-}
+import OBR from "@owlbear-rodeo/sdk";
 
 const NS = "com.effect-tracker/data";
 let selectedItems = [];
@@ -223,8 +209,7 @@ function showStartupError(message) {
   if (status) status.textContent = message;
 }
 
-// This module is loaded inside Owlbear's action popover. The SDK's onReady
-// method returns an unsubscribe function (not a Promise), so do not chain .catch().
+// The SDK's onReady method returns an unsubscribe function, not a Promise.
 OBR.onReady(() => {
   void (async () => {
     try {
@@ -242,7 +227,7 @@ OBR.onReady(() => {
       });
 
       await readSelection();
-      // The public SDK documents getSelection(), but does not expose a dedicated
+      // The public Player API documents getSelection(), but no dedicated
       // selection-change subscription. Poll while this popover is open.
       selectionPoll = window.setInterval(() => { void readSelection(); }, 500);
     } catch (error) {
