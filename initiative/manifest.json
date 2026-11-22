@@ -1,0 +1,16 @@
+{
+  "name": "Initiative + Bleed Tracker",
+  "version": "1.0.0",
+  "manifest_version": 1,
+  "author": "Herbybow (modified from Owlbear Rodeo Initiative Tracker)",
+  "homepage_url": "https://github.com/Herbybow/Effect-Tracker",
+  "icon": "https://herbybow.github.io/Effect-Tracker/initiative/icon.svg",
+  "description": "Shared initiative tracker with automatic Bleed charge consumption and per-turn damage display.",
+  "action": {
+    "title": "Initiative + Bleed",
+    "icon": "https://herbybow.github.io/Effect-Tracker/initiative/icon.svg",
+    "popover": "https://herbybow.github.io/Effect-Tracker/initiative/",
+    "height": 129,
+    "width": 250
+  }
+}
