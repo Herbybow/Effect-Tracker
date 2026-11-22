@@ -11,3 +11,5 @@
 .effect-tag{display:inline-flex;background:#512531;color:#ffd8df;border:1px solid #874052;border-radius:7px;padding:5px 8px;font-size:11px}
 
 .character-name{display:block;font-size:15px;margin:9px 0}
+
+#selection-label{display:none}
