@@ -1,7 +1,8 @@
 import OBR from "@owlbear-rodeo/sdk";
 
 const NS = "com.effect-tracker/data";
-let selectedItems = [];
+let trackedCharacters = [];
+let activeCharacterId = null;
 let refreshBusy = false;
 let refreshQueued = false;
 const $ = (id) => document.getElementById(id);
@@ -18,23 +19,119 @@ function isCharacter(item) {
   return Boolean(item && item.layer === "CHARACTER" && item.type === "IMAGE");
 }
 
-function getEffects(item) {
-  const data = item?.metadata?.[NS];
-  return data?.effects && typeof data.effects === "object" ? data.effects : {};
-}
-
-function prettyEffectName(key) {
-  return key.replace(/[-_]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
-function describeEffect(key, effect) {
-  if (key === "bleed") {
-    const power = Number(effect?.power) || Number(effect?.damage) || 1;
-    const charges = Number(effect?.charges) || 0;
-    return `Bleed · 3x${power} · ${charges}/3 charges`;
+function getBleeds(item) {
+  const value = item?.metadata?.[NS]?.effects?.bleed;
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === "object") {
+    return [{
+      id: value.id || `legacy-${value.appliedAt || Date.now()}`,
+      power: Number(value.power) || Number(value.damage) || 1,
+      charges: Math.max(0, Number(value.charges) || 0),
+      appliedAt: value.appliedAt || new Date().toISOString()
+    }].filter((bleed) => bleed.charges > 0);
   }
-  const charges = Number(effect?.charges);
-  return `${prettyEffectName(key)}${Number.isFinite(charges) ? ` · ${charges} charges` : ""}`;
+  return [];
+}
+
+function getActiveCharacter() {
+  return trackedCharacters.find((item) => item.id === activeCharacterId) || null;
+}
+
+function renderCharacterPicker() {
+  const picker = $("character-select");
+  const previous = activeCharacterId;
+  picker.replaceChildren();
+  for (const item of trackedCharacters) {
+    const option = document.createElement("option");
+    option.value = item.id;
+    option.textContent = item.name || "Unnamed character";
+    picker.append(option);
+  }
+
+  activeCharacterId = trackedCharacters.some((item) => item.id === previous)
+    ? previous
+    : (trackedCharacters[0]?.id ?? null);
+  if (activeCharacterId) picker.value = activeCharacterId;
+  picker.disabled = trackedCharacters.length === 0;
+
+  const active = getActiveCharacter();
+  $("character-name").textContent = active?.name || "No character assigned";
+  $("selection-label").textContent = active
+    ? "This character has an independent effect tracker."
+    : "Right-click a character token and choose Assign Effect Tracker.";
+}
+
+function renderCurrent() {
+  const host = $("current-effects");
+  host.replaceChildren();
+  const item = getActiveCharacter();
+  if (!item) {
+    host.className = "empty";
+    host.textContent = "Assign a character to see its current effects.";
+    return;
+  }
+
+  const bleeds = getBleeds(item);
+  if (!bleeds.length) {
+    host.className = "empty";
+    host.textContent = "No active effects on this character.";
+    return;
+  }
+
+  host.className = "current-list";
+  const summary = document.createElement("p");
+  summary.className = "muted";
+  summary.textContent = `${bleeds.length} independent Bleed effect${bleeds.length === 1 ? "" : "s"}`;
+  host.append(summary);
+
+  const tags = document.createElement("div");
+  tags.className = "current-effect-tags";
+  for (const bleed of bleeds) {
+    const tag = document.createElement("span");
+    tag.className = "effect-tag";
+    tag.textContent = `3×${bleed.power} · ${bleed.charges}/3 charges`;
+    tags.append(tag);
+  }
+  host.append(tags);
+}
+
+function renderActiveEffects() {
+  const host = $("effects");
+  host.replaceChildren();
+  const item = getActiveCharacter();
+  if (!item) {
+    host.className = "empty";
+    host.textContent = "Choose an assigned character first.";
+    $("test-tick").disabled = true;
+    return;
+  }
+
+  const bleeds = getBleeds(item);
+  if (!bleeds.length) {
+    host.className = "empty";
+    host.textContent = "No active Bleed on this character.";
+    $("test-tick").disabled = true;
+    return;
+  }
+
+  host.className = "";
+  const totalDamage = bleeds.reduce((sum, bleed) => sum + bleed.power, 0);
+  for (const [index, bleed] of bleeds.entries()) {
+    const row = document.createElement("div");
+    row.className = "effect-row";
+    const left = document.createElement("strong");
+    left.textContent = `Bleed ${index + 1}`;
+    const right = document.createElement("span");
+    right.textContent = `3×${bleed.power} · ${bleed.charges}/3`;
+    row.append(left, right);
+    host.append(row);
+  }
+
+  const total = document.createElement("p");
+  total.className = "hint";
+  total.textContent = `Combined damage at the next turn: ${totalDamage} HP (one charge consumed from each Bleed).`;
+  host.append(total);
+  $("test-tick").disabled = false;
 }
 
 async function refreshTrackedCharacters() {
@@ -45,28 +142,13 @@ async function refreshTrackedCharacters() {
   refreshBusy = true;
   try {
     const items = await OBR.scene.items.getItems(isCharacter);
-    selectedItems = items.filter((item) => item.metadata?.[NS]?.tracked === true);
-
-    $("connection-status").textContent = "Connected to Owlbear Rodeo.";
-    $("selection-count").textContent = `${selectedItems.length} assigned`;
-    $("selection-label").textContent = selectedItems.length
-      ? "Assigned character(s) are ready. Bleed buttons apply to all assigned characters."
-      : "Right-click a character token and choose Assign Effect Tracker.";
-
-    const selectionList = $("selection-list");
-    selectionList.replaceChildren();
-    for (const item of selectedItems) {
-      const chip = document.createElement("span");
-      chip.className = "token";
-      chip.textContent = item.name || "Unnamed character";
-      selectionList.append(chip);
-    }
-
+    trackedCharacters = items.filter((item) => item.metadata?.[NS]?.tracked === true);
+    renderCharacterPicker();
     renderCurrent();
     renderActiveEffects();
   } catch (error) {
-    console.error("Effect Tracker selection error", error);
-    $("connection-status").textContent = `Owlbear API error: ${error?.message || error}`;
+    console.error("Effect Tracker refresh error", error);
+    notify(`Could not refresh characters: ${error?.message || error}`);
   } finally {
     refreshBusy = false;
     if (refreshQueued) {
@@ -76,73 +158,12 @@ async function refreshTrackedCharacters() {
   }
 }
 
-function renderCurrent() {
-  const host = $("current-effects");
-  host.replaceChildren();
-  if (!selectedItems.length) {
-    host.className = "empty";
-    host.textContent = "Assign a character from its right-click menu to see its current effects.";
-    return;
-  }
-  host.className = "current-list";
-  for (const item of selectedItems) {
-    const card = document.createElement("div");
-    card.className = "current-character";
-    const heading = document.createElement("strong");
-    heading.textContent = item.name || "Unnamed character";
-    card.append(heading);
-    const effects = Object.entries(getEffects(item));
-    if (!effects.length) {
-      const empty = document.createElement("p");
-      empty.className = "muted current-empty";
-      empty.textContent = "No active effects.";
-      card.append(empty);
-    } else {
-      const list = document.createElement("div");
-      list.className = "current-effect-tags";
-      for (const [key, effect] of effects) {
-        const tag = document.createElement("span");
-        tag.className = "effect-tag";
-        tag.textContent = describeEffect(key, effect);
-        list.append(tag);
-      }
-      card.append(list);
-    }
-    host.append(card);
-  }
-}
-
-function renderActiveEffects() {
-  const host = $("effects");
-  host.replaceChildren();
-  const rows = selectedItems.flatMap((item) =>
-    Object.entries(getEffects(item)).map(([key, effect]) => ({ item, key, effect }))
-  );
-  if (!rows.length) {
-    host.className = "empty";
-    host.textContent = selectedItems.length ? "No active effect on the selected character(s)." : "Assign a character from its right-click menu to inspect active effects.";
-    $("test-tick").disabled = true;
-    return;
-  }
-  host.className = "";
-  for (const { item, key, effect } of rows) {
-    const row = document.createElement("div");
-    row.className = "effect-row";
-    const left = document.createElement("strong");
-    left.textContent = item.name || "Character";
-    const right = document.createElement("span");
-    right.textContent = describeEffect(key, effect);
-    row.append(left, right);
-    host.append(row);
-  }
-  $("test-tick").disabled = !rows.some(({ key, effect }) => key === "bleed" && Number(effect?.charges) > 0);
-}
-
 async function updateCharacter(itemId, mutate) {
   await OBR.scene.items.updateItems([itemId], (items) => {
     for (const item of items) {
       const current = item.metadata?.[NS] ?? { effects: {} };
       const next = JSON.parse(JSON.stringify(current));
+      next.effects ??= {};
       mutate(next, item);
       item.metadata = { ...item.metadata, [NS]: next };
     }
@@ -150,25 +171,33 @@ async function updateCharacter(itemId, mutate) {
 }
 
 async function applyBleed(power) {
-  if (!selectedItems.length) {
-    notify("Assign a character first using its right-click menu.");
+  const item = getActiveCharacter();
+  if (!item) {
+    notify("Choose or assign one character first.");
     return;
   }
-  const targets = [...selectedItems];
+
   try {
-    for (const item of targets) {
-      await updateCharacter(item.id, (data) => {
-        data.effects ??= {};
-        data.effects.bleed = {
-          power,
-          damage: power,
-          charges: 3,
-          appliedAt: new Date().toISOString(),
-          schemaVersion: 1
-        };
+    await updateCharacter(item.id, (data) => {
+      const current = data.effects.bleed;
+      const bleeds = Array.isArray(current)
+        ? current
+        : (current && typeof current === "object" ? [{
+            id: current.id || `legacy-${current.appliedAt || Date.now()}`,
+            power: Number(current.power) || Number(current.damage) || 1,
+            charges: Math.max(0, Number(current.charges) || 0),
+            appliedAt: current.appliedAt || new Date().toISOString()
+          }] : []);
+      bleeds.push({
+        id: crypto.randomUUID(),
+        power,
+        charges: 3,
+        appliedAt: new Date().toISOString(),
+        schemaVersion: 2
       });
-    }
-    notify(`Bleed 3×${power} applied to ${targets.length} character(s).`);
+      data.effects.bleed = bleeds.filter((bleed) => bleed.charges > 0);
+    });
+    notify(`Added a new 3×${power} Bleed to ${item.name || "the character"}.`);
     await refreshTrackedCharacters();
   } catch (error) {
     console.error("Effect Tracker apply error", error);
@@ -177,45 +206,43 @@ async function applyBleed(power) {
 }
 
 async function testTick() {
-  const targets = selectedItems.filter((item) => {
-    const bleed = getEffects(item).bleed;
-    return bleed && Number(bleed.charges) > 0;
-  });
-  if (!targets.length) return;
+  const item = getActiveCharacter();
+  if (!item) return;
+  const bleeds = getBleeds(item);
+  if (!bleeds.length) return;
+
+  const totalDamage = bleeds.reduce((sum, bleed) => sum + bleed.power, 0);
   try {
-    for (const item of targets) {
-      await updateCharacter(item.id, (data) => {
-        const effect = data.effects?.bleed;
-        if (!effect) return;
-        effect.charges = Math.max(0, Number(effect.charges) - 1);
-        effect.lastTestTickAt = new Date().toISOString();
-        if (effect.charges === 0) delete data.effects.bleed;
-      });
-    }
-    notify(`Test only: consumed one Bleed charge on ${targets.length} character(s). HP was not changed.`);
+    await updateCharacter(item.id, (data) => {
+      const current = Array.isArray(data.effects.bleed) ? data.effects.bleed : getBleeds(item);
+      data.effects.bleed = current
+        .map((bleed) => ({ ...bleed, charges: Math.max(0, Number(bleed.charges) - 1) }))
+        .filter((bleed) => bleed.charges > 0);
+      if (data.effects.bleed.length === 0) delete data.effects.bleed;
+    });
+    notify(`Test tick: ${item.name || "Character"} would lose ${totalDamage} HP. One charge consumed from every Bleed. HP is not modified yet.`);
     await refreshTrackedCharacters();
   } catch (error) {
     console.error("Effect Tracker test tick error", error);
-    notify(`Could not consume Bleed charge: ${error?.message || error}`);
+    notify(`Could not consume Bleed charges: ${error?.message || error}`);
   }
 }
 
-function showStartupError(message) {
-  const status = $("connection-status");
-  if (status) status.textContent = message;
-}
-
-// The SDK's onReady method returns an unsubscribe function, not a Promise.
 OBR.onReady(() => {
   void (async () => {
     try {
-      showStartupError("Owlbear SDK ready. Connecting to the current scene…");
       document.querySelectorAll("#tiers button[data-tier]").forEach((button) => {
         button.addEventListener("click", () => applyBleed(Number(button.dataset.tier)));
       });
       $("test-tick").addEventListener("click", testTick);
       $("refresh").addEventListener("click", refreshTrackedCharacters);
       $("reload-effects").addEventListener("click", refreshTrackedCharacters);
+      $("character-select").addEventListener("change", (event) => {
+        activeCharacterId = event.target.value || null;
+        renderCharacterPicker();
+        renderCurrent();
+        renderActiveEffects();
+      });
 
       await OBR.contextMenu.create({
         id: "com.effect-tracker/context-menu",
@@ -226,7 +253,7 @@ OBR.onReady(() => {
             filter: {
               every: [
                 { key: "layer", value: "CHARACTER" },
-                { key: ["metadata", NS, "tracked"], value: undefined }
+                { key: ["metadata", NS], value: undefined }
               ]
             }
           },
@@ -241,10 +268,8 @@ OBR.onReady(() => {
             }
           }
         ],
-        async onClick(context) {
-          const shouldAssign = context.items.every(
-            (item) => item.metadata?.[NS]?.tracked !== true
-          );
+        async onClick(context, elementId) {
+          const shouldAssign = elementId === "0";
           await OBR.scene.items.updateItems(context.items, (items) => {
             for (const item of items) {
               const current = item.metadata?.[NS] ?? { effects: {} };
@@ -254,43 +279,39 @@ OBR.onReady(() => {
               item.metadata = { ...item.metadata, [NS]: next };
             }
           });
+          if (shouldAssign && context.items[0]) activeCharacterId = context.items[0].id;
           await refreshTrackedCharacters();
           notify(shouldAssign ? "Character assigned to Effect Tracker." : "Character removed from Effect Tracker.");
         }
       });
 
       OBR.scene.items.onChange((items) => {
-        selectedItems = items.filter((item) => isCharacter(item) && item.metadata?.[NS]?.tracked === true);
-        $("connection-status").textContent = "Connected to Owlbear Rodeo.";
-        $("selection-count").textContent = `${selectedItems.length} assigned`;
+        const previousId = activeCharacterId;
+        trackedCharacters = items.filter((item) => isCharacter(item) && item.metadata?.[NS]?.tracked === true);
+        if (!trackedCharacters.some((item) => item.id === previousId)) {
+          activeCharacterId = trackedCharacters[0]?.id ?? null;
+        }
+        renderCharacterPicker();
         renderCurrent();
         renderActiveEffects();
-        const selectionList = $("selection-list");
-        selectionList.replaceChildren();
-        for (const item of selectedItems) {
-          const chip = document.createElement("span");
-          chip.className = "token";
-          chip.textContent = item.name || "Unnamed character";
-          selectionList.append(chip);
-        }
       });
+
       OBR.scene.onReadyChange((ready) => {
         if (ready) void refreshTrackedCharacters();
       });
-
       await refreshTrackedCharacters();
     } catch (error) {
       console.error("Effect Tracker startup error", error);
-      showStartupError(`Startup error: ${error?.message || error}`);
+      notify(`Effect Tracker startup error: ${error?.message || error}`);
     }
   })();
 });
 
 window.addEventListener("error", (event) => {
   console.error("Effect Tracker script error", event.error || event.message);
-  showStartupError(`Script error: ${event.message || "unknown error"}`);
+  notify(`Script error: ${event.message || "unknown error"}`);
 });
 window.addEventListener("unhandledrejection", (event) => {
   console.error("Effect Tracker rejected promise", event.reason);
-  showStartupError(`Connection error: ${event.reason?.message || event.reason || "unknown error"}`);
+  notify(`Connection error: ${event.reason?.message || event.reason || "unknown error"}`);
 });
