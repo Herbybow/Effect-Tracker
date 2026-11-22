@@ -4,6 +4,7 @@ https://herbybow.github.io/Effect-Tracker/manifest.json
 
 
 IF ""https://herbybow.github.io/Effect-Tracker/manifest.json"" doesn't open in Browser, tcheck if name match filename
+IF ""https://herbybow.github.io/Effect-Tracker/index.html"" doesn't open in Browser, code is busted
  
 ## Changes in v0.1.2
 - Fixed SDK readiness handling: `OBR.onReady()` returns an unsubscribe function, not a Promise. Removed the invalid `.catch?.()` chain.
