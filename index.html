@@ -14,15 +14,15 @@
     </header>
 
     <section class="panel">
-      <div class="section-title"><h2>Selected character</h2><span id="selection-count" class="pill">0 selected</span></div>
-      <p id="selection-label" class="muted">Waiting for Owlbear Rodeo…</p>
+      <div class="section-title"><h2>Tracked characters</h2><span id="selection-count" class="pill">0 assigned</span></div>
+      <p id="selection-label" class="muted">Right-click a character token and choose Assign Effect Tracker.</p>
       <p id="connection-status" class="hint">Loading Effect Tracker script…</p>
       <div id="selection-list" class="token-list"></div>
     </section>
 
     <section class="panel">
       <div class="section-title"><h2>Current</h2><span class="pill">Selected token(s)</span></div>
-      <div id="current-effects" class="empty">Select a character to see its current effects.</div>
+      <div id="current-effects" class="empty">Assign a character from its right-click menu to see its current effects.</div>
     </section>
 
     <section class="panel bleed-panel">
@@ -46,6 +46,12 @@
     <footer>Effect data is stored on each Owlbear scene item under a private Effect Tracker metadata key.</footer>
     <div id="toast" role="status" aria-live="polite"></div>
   </main>
-  <script type="module" src="./main.js"></script>
+  <script type="module">
+    import("./main.js").catch((error) => {
+      const status = document.getElementById("connection-status");
+      if (status) status.textContent = `Effect Tracker failed to start: ${error?.message || error}`;
+      console.error("Effect Tracker module failed to load:", error);
+    });
+  </script>
 </body>
 </html>
