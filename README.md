@@ -3,7 +3,8 @@
 https://herbybow.github.io/effect-tracker/manifest.json
 
 
-
+IF ""https://herbybow.github.io/effect-tracker/manifest.json"" doesn't open in Browser, tcheck if latest Deployment has green checkmark 
+ 
 ## Changes in v0.1.2
 - Fixed SDK readiness handling: `OBR.onReady()` returns an unsubscribe function, not a Promise. Removed the invalid `.catch?.()` chain.
 - Added explicit script/startup/API error reporting.
