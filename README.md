@@ -1,6 +1,7 @@
 # Effect Tracker — v0.1.2
 
 https://herbybow.github.io/Effect-Tracker/manifest.json
+
 https://herbybow.github.io/Effect-Tracker/initiative/manifest.json
 
 
