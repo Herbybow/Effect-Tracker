@@ -10,7 +10,7 @@ try {
   if (status) {
     status.textContent = `SDK loading failed: ${error.message}`;
   }
-  console.error("Effect Tracker SDK loading failed:", error);
+  console.error("Effect Tracker SDK loading failed, BECAUSE :", error);
   throw error;
 }
 
