@@ -2,10 +2,8 @@ import OBR from "@owlbear-rodeo/sdk";
 
 const NS = "com.effect-tracker/data";
 let selectedItems = [];
-let selectedIds = [];
 let refreshBusy = false;
 let refreshQueued = false;
-let selectionPoll = null;
 const $ = (id) => document.getElementById(id);
 
 function notify(message) {
@@ -39,23 +37,21 @@ function describeEffect(key, effect) {
   return `${prettyEffectName(key)}${Number.isFinite(charges) ? ` · ${charges} charges` : ""}`;
 }
 
-async function readSelection() {
+async function refreshTrackedCharacters() {
   if (refreshBusy) {
     refreshQueued = true;
     return;
   }
   refreshBusy = true;
   try {
-    const ids = (await OBR.player.getSelection()) ?? [];
-    selectedIds = Array.isArray(ids) ? ids : [];
-    const items = selectedIds.length ? await OBR.scene.items.getItems(selectedIds) : [];
-    selectedItems = items.filter(isCharacter);
+    const items = await OBR.scene.items.getItems(isCharacter);
+    selectedItems = items.filter((item) => item.metadata?.[NS]?.tracked === true);
 
     $("connection-status").textContent = "Connected to Owlbear Rodeo.";
-    $("selection-count").textContent = `${selectedItems.length} selected`;
+    $("selection-count").textContent = `${selectedItems.length} assigned`;
     $("selection-label").textContent = selectedItems.length
-      ? "Selected character(s) are ready. Choose a Bleed power below to apply it."
-      : "Select a character token on the map. This panel updates automatically.";
+      ? "Assigned character(s) are ready. Bleed buttons apply to all assigned characters."
+      : "Right-click a character token and choose Assign Effect Tracker.";
 
     const selectionList = $("selection-list");
     selectionList.replaceChildren();
@@ -85,7 +81,7 @@ function renderCurrent() {
   host.replaceChildren();
   if (!selectedItems.length) {
     host.className = "empty";
-    host.textContent = "Select a character to see its current effects.";
+    host.textContent = "Assign a character from its right-click menu to see its current effects.";
     return;
   }
   host.className = "current-list";
@@ -124,7 +120,7 @@ function renderActiveEffects() {
   );
   if (!rows.length) {
     host.className = "empty";
-    host.textContent = selectedItems.length ? "No active effect on the selected character(s)." : "Select a character to inspect active effects.";
+    host.textContent = selectedItems.length ? "No active effect on the selected character(s)." : "Assign a character from its right-click menu to inspect active effects.";
     $("test-tick").disabled = true;
     return;
   }
@@ -155,7 +151,7 @@ async function updateCharacter(itemId, mutate) {
 
 async function applyBleed(power) {
   if (!selectedItems.length) {
-    notify("Select a character token on the map first.");
+    notify("Assign a character first using its right-click menu.");
     return;
   }
   const targets = [...selectedItems];
@@ -173,7 +169,7 @@ async function applyBleed(power) {
       });
     }
     notify(`Bleed 3×${power} applied to ${targets.length} character(s).`);
-    await readSelection();
+    await refreshTrackedCharacters();
   } catch (error) {
     console.error("Effect Tracker apply error", error);
     notify(`Could not apply Bleed: ${error?.message || error}`);
@@ -218,18 +214,69 @@ OBR.onReady(() => {
         button.addEventListener("click", () => applyBleed(Number(button.dataset.tier)));
       });
       $("test-tick").addEventListener("click", testTick);
-      $("refresh").addEventListener("click", readSelection);
-      $("reload-effects").addEventListener("click", readSelection);
+      $("refresh").addEventListener("click", refreshTrackedCharacters);
+      $("reload-effects").addEventListener("click", refreshTrackedCharacters);
 
-      OBR.scene.items.onChange(() => { void readSelection(); });
+      OBR.contextMenu.create({
+        id: "com.effect-tracker/context-menu",
+        icons: [
+          {
+            icon: "https://herbybow.github.io/Effect-Tracker/assign.svg",
+            label: "Assign Effect Tracker",
+            filter: {
+              every: [
+                { key: "layer", value: "CHARACTER" },
+                { key: ["metadata", NS, "tracked"], value: true, operator: "!=" }
+              ]
+            }
+          },
+          {
+            icon: "https://herbybow.github.io/Effect-Tracker/unassign.svg",
+            label: "Remove from Effect Tracker",
+            filter: {
+              every: [
+                { key: "layer", value: "CHARACTER" },
+                { key: ["metadata", NS, "tracked"], value: true }
+              ]
+            }
+          }
+        ],
+        async onClick(context, elementId) {
+          const shouldAssign = elementId === "assign";
+          await OBR.scene.items.updateItems(context.items, (items) => {
+            for (const item of items) {
+              const current = item.metadata?.[NS] ?? { effects: {} };
+              const next = JSON.parse(JSON.stringify(current));
+              if (shouldAssign) next.tracked = true;
+              else delete next.tracked;
+              item.metadata = { ...item.metadata, [NS]: next };
+            }
+          });
+          await refreshTrackedCharacters();
+          notify(shouldAssign ? "Character assigned to Effect Tracker." : "Character removed from Effect Tracker.");
+        }
+      });
+
+      OBR.scene.items.onChange((items) => {
+        selectedItems = items.filter((item) => isCharacter(item) && item.metadata?.[NS]?.tracked === true);
+        $("connection-status").textContent = "Connected to Owlbear Rodeo.";
+        $("selection-count").textContent = `${selectedItems.length} assigned`;
+        renderCurrent();
+        renderActiveEffects();
+        const selectionList = $("selection-list");
+        selectionList.replaceChildren();
+        for (const item of selectedItems) {
+          const chip = document.createElement("span");
+          chip.className = "token";
+          chip.textContent = item.name || "Unnamed character";
+          selectionList.append(chip);
+        }
+      });
       OBR.scene.onReadyChange((ready) => {
         if (ready) void readSelection();
       });
 
-      await readSelection();
-      // The public Player API documents getSelection(), but no dedicated
-      // selection-change subscription. Poll while this popover is open.
-      selectionPoll = window.setInterval(() => { void readSelection(); }, 500);
+      await refreshTrackedCharacters();
     } catch (error) {
       console.error("Effect Tracker startup error", error);
       showStartupError(`Startup error: ${error?.message || error}`);
