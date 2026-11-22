@@ -1,7 +1,9 @@
 let OBR;
 
 try {
-  const sdk = await import("https://esm.sh/@owlbear-rodeo/sdk@1.5.2");
+  const sdk = await import(
+  "https://cdn.jsdelivr.net/npm/@owlbear-rodeo/sdk@1.5.2/+esm"
+);
   OBR = sdk.default;
 } catch (error) {
   const status = document.getElementById("connection-status");
