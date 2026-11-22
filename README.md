@@ -3,7 +3,8 @@
 https://herbybow.github.io/Effect-Tracker/manifest.json
 
 
-IF ""https://herbybow.github.io/Effect-Tracker/manifest.json"" doesn't open in Browser, tcheck if name match filename
+IF ""https://herbybow.github.io/Effect-Tracker/manifest.json"" doesn't open in Browser, tcheck name match filename
+
 IF ""https://herbybow.github.io/Effect-Tracker/index.html"" doesn't open in Browser, code is busted
  
 ## Changes in v0.1.2
