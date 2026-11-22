@@ -13,6 +13,3 @@
 .character-name{display:block;font-size:15px;margin:9px 0}
 
 #selection-label{display:none}
-
-/* Clickable per-character tracker selector */
-.token{border:1px solid #504657;cursor:pointer;transition:background .15s,border-color .15s}.token:hover{border-color:#d47a91;background:#44313e}.token.active{background:#7e2940;border-color:#e36b86;color:#fff;box-shadow:0 0 0 1px #e36b86 inset}.token:focus-visible{outline:2px solid #f2b6c5;outline-offset:2px}
