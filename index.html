@@ -14,19 +14,19 @@
     </header>
 
     <section class="panel">
-      <div class="section-title"><h2>Tracked characters</h2><span id="selection-count" class="pill">0 assigned</span></div>
+      <div class="section-title"><h2>Character Name</h2></div>
+      <strong id="character-name" class="character-name">No character assigned</strong>
+      <select id="character-select" aria-label="Choose tracked character" disabled></select>
       <p id="selection-label" class="muted">Right-click a character token and choose Assign Effect Tracker.</p>
-      <p id="connection-status" class="hint">Loading Effect Tracker script…</p>
-      <div id="selection-list" class="token-list"></div>
     </section>
 
     <section class="panel">
-      <div class="section-title"><h2>Current</h2><span class="pill">Selected token(s)</span></div>
+      <div class="section-title"><h2>Current</h2><span class="pill">This character</span></div>
       <div id="current-effects" class="empty">Assign a character from its right-click menu to see its current effects.</div>
     </section>
 
     <section class="panel bleed-panel">
-      <div class="effect-heading"><div class="drop">♥</div><div><h2>Bleed</h2><p class="muted">Choose a power to apply it to the selected character(s)</p></div></div>
+      <div class="effect-heading"><div class="drop">♥</div><div><h2>Bleed</h2><p class="muted">Choose a power to apply it to this character</p></div></div>
       <div class="tiers" id="tiers">
         <button data-tier="1">3x1</button>
         <button data-tier="2">3x2</button>
@@ -34,14 +34,14 @@
         <button data-tier="4">3x4</button>
         <button data-tier="5">3x5</button>
       </div>
-      <p class="hint">Clicking a power applies or refreshes Bleed immediately. Each application has three charges.</p>
+      <p class="hint">Each click adds a separate Bleed. Existing Bleeds are never replaced.</p>
     </section>
 
     <section class="panel">
       <div class="section-title"><h2>Active Effect</h2><button id="reload-effects" class="text-button">Refresh</button></div>
       <div id="effects" class="empty">No active effect on the selected character(s).</div>
       <button id="test-tick" class="secondary" disabled>Test: consume one Bleed charge</button>
-      <p class="warning">Test only: consumes a charge but does not change HP. Automatic initiative and Trackers HP integration are not connected yet.</p>
+      <p class="warning">Test only: calculates combined damage and consumes one charge from every Bleed. HP and automatic initiative are not connected yet.</p>
     </section>
     <footer>Effect data is stored on each Owlbear scene item under a private Effect Tracker metadata key.</footer>
     <div id="toast" role="status" aria-live="polite"></div>
