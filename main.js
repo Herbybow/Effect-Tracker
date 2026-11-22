@@ -46,7 +46,7 @@ async function syncBleedMarkers(){
  const items=await OBR.scene.items.getItems(isCharacter);
  for(const item of items){
   const data=item.metadata?.[NS]||{};
-  const markerId=data.bleedMarkerId;
+  const markerId=data.bleedMarkerId;\n  const markerVersion=data.bleedMarkerVersion||0;
   const hasBleed=bleedsOf(item).length>0;
   if(hasBleed&&!markerId){
    const marker=buildImage(
@@ -58,7 +58,7 @@ async function syncBleedMarkers(){
    await OBR.scene.items.addItems([marker]);
   }else if(!hasBleed&&markerId){
    await OBR.scene.items.deleteItems([markerId]);
-   await OBR.scene.items.updateItems([item.id],draft=>{for(const token of draft){const next={...(token.metadata?.[NS]||{})};delete next.bleedMarkerId;token.metadata={...token.metadata,[NS]:next};}});
+   await OBR.scene.items.updateItems([item.id],draft=>{for(const token of draft){const next={...(token.metadata?.[NS]||{})};delete next.bleedMarkerId;delete next.bleedMarkerVersion;token.metadata={...token.metadata,[NS]:next};}});
   }
  }
 }
