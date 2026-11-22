@@ -1,3 +1,4 @@
+
 {
   "name": "Effect Tracker",
   "version": "0.1.2",
@@ -6,8 +7,8 @@
   "description": "Token-based status effects for Owlbear Rodeo. First prototype: Bleed.",
   "action": {
     "title": "Effect Tracker",
-    "icon": "/icon.svg",
-    "popover": "/",
+    "icon": "https://herbybow.github.io/effect-tracker/icon.svg",
+    "popover": "https://herbybow.github.io/effect-tracker/",
     "height": 620,
     "width": 360
   }
