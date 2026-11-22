@@ -1,4 +1,16 @@
-import OBR from "https://esm.sh/@owlbear-rodeo/sdk@1.5.2";
+let OBR;
+
+try {
+  const sdk = await import("https://esm.sh/@owlbear-rodeo/sdk@1.5.2");
+  OBR = sdk.default;
+} catch (error) {
+  const status = document.getElementById("connection-status");
+  if (status) {
+    status.textContent = `SDK loading failed: ${error.message}`;
+  }
+  console.error("Effect Tracker SDK loading failed:", error);
+  throw error;
+}
 
 const NS = "com.effect-tracker/data";
 let selectedItems = [];
