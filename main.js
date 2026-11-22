@@ -12,6 +12,7 @@ function bleedsOf(item){
 }
 function active(){return characters.find(x=>x.id===activeId)||null;}
 function render(){
+ const list=$("character-list");if(list){list.replaceChildren();for(const character of characters){const button=document.createElement("button");button.type="button";button.className=`token${character.id===activeId?" active":""}`;button.textContent=character.name||"Unnamed character";button.setAttribute("aria-pressed",String(character.id===activeId));button.title=`Show ${character.name||"this character"} effects`;button.addEventListener("click",()=>{if(character.id!==activeId){void setActive(character.id).catch(e=>{console.error(e);notify(`Could not select character: ${e?.message||e}`);});}});list.append(button);}}
  const item=active();$("character-name").textContent=item?.name||"No character assigned";
  $("selection-label").textContent=item?"Individual effect tracker":"Right-click a character token and choose Assign Effect Tracker.";
  const current=$("current-effects");current.replaceChildren();
