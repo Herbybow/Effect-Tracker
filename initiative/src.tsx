@@ -27,7 +27,8 @@ function Tracker(){
  useEffect(()=>{
   const refresh=(sceneItems:Item[])=>setItems(sceneItems.filter(isImage).flatMap(item=>{
    const m=item.metadata[INIT]; if(!valid(m))return [];
-   const effects=item.metadata[EFFECTS]?.effects; const bleed=effects?.bleed; const hasBleed=Array.isArray(bleed)?bleed.some((b:any)=>(Number(b.charges)||0)>0):!!bleed&&(Number(bleed.charges)||0)>0;\n   return [{id:item.id,count:m.count,name:item.text.plainText||item.name,active:m.active,visible:item.visible,hasBleed,turnDamage:typeof m.turnDamage==="number"?m.turnDamage:undefined}];
+   const effects=item.metadata[EFFECTS]?.effects; const bleed=effects?.bleed; const hasBleed=Array.isArray(bleed)?bleed.some((b:any)=>(Number(b.charges)||0)>0):!!bleed&&(Number(bleed.charges)||0)>0;
+   return [{id:item.id,count:m.count,name:item.text.plainText||item.name,active:m.active,visible:item.visible,hasBleed,turnDamage:typeof m.turnDamage==="number"?m.turnDamage:undefined}];
   }));
   OBR.scene.items.getItems().then(refresh); return OBR.scene.items.onChange(refresh);
  },[]);
