@@ -17,7 +17,7 @@ import "./style.css";
 
 const INIT="rodeo.owlbear.initiative-tracker/metadata";
 const EFFECTS="com.effect-tracker/data";
-type Entry={id:string;count:string;name:string;active:boolean;visible:boolean;turnDamage?:number};
+type Entry={id:string;count:string;name:string;active:boolean;visible:boolean;hasBleed:boolean;turnDamage?:number};
 const valid=(v:any)=>v&&typeof v==="object"&&typeof v.count==="string"&&typeof v.active==="boolean";
 
 function Tracker(){
@@ -27,7 +27,7 @@ function Tracker(){
  useEffect(()=>{
   const refresh=(sceneItems:Item[])=>setItems(sceneItems.filter(isImage).flatMap(item=>{
    const m=item.metadata[INIT]; if(!valid(m))return [];
-   return [{id:item.id,count:m.count,name:item.text.plainText||item.name,active:m.active,visible:item.visible,turnDamage:typeof m.turnDamage==="number"?m.turnDamage:undefined}];
+   const effects=item.metadata[EFFECTS]?.effects; const bleed=effects?.bleed; const hasBleed=Array.isArray(bleed)?bleed.some((b:any)=>(Number(b.charges)||0)>0):!!bleed&&(Number(bleed.charges)||0)>0;\n   return [{id:item.id,count:m.count,name:item.text.plainText||item.name,active:m.active,visible:item.visible,hasBleed,turnDamage:typeof m.turnDamage==="number"?m.turnDamage:undefined}];
   }));
   OBR.scene.items.getItems().then(refresh); return OBR.scene.items.onChange(refresh);
  },[]);
@@ -65,7 +65,7 @@ function Tracker(){
   {!items.length&&<Typography variant="caption" sx={{px:2,py:1,color:"text.secondary"}}>Select a character to start initiative</Typography>}
   <Box sx={{overflowY:"auto"}}><List>{items.sort((a,b)=>parseFloat(b.count)-parseFloat(a.count)).map(item=>item.visible||role==="GM"?<ListItem key={item.id} divider selected={item.active} sx={{pr:"64px"}} secondaryAction={<Input disableUnderline sx={{width:48}} inputProps={{sx:{textAlign:"right"}}} value={item.count} onChange={e=>changeCount(item.id,e.target.value)}/>} onDoubleClick={async()=>{await OBR.player.select([item.id]);const bounds=await OBR.scene.items.getItemBounds([item.id]);const center=await OBR.viewport.transformPoint(bounds.center);const w=await OBR.viewport.getWidth(),h=await OBR.viewport.getHeight();const rel=await OBR.viewport.inverseTransformPoint({x:center.x-w/2,y:center.y-h/2});const scale=await OBR.viewport.getScale();await OBR.viewport.animateTo({scale,position:{x:-rel.x*scale,y:-rel.y*scale}});}}>
    {!item.visible&&role==="GM"&&<VisibilityOffRounded fontSize="small" sx={{mr:1,opacity:.5}}/>}
-   <ListItemText sx={{color:"text.primary"}} primary={<Box sx={{display:"flex",alignItems:"center",gap:1}}><span>{item.name}</span>{!!item.turnDamage&&<Typography component="span" sx={{color:"#d32f2f",fontWeight:700}}>−{item.turnDamage}</Typography>}</Box>}/>
+   <ListItemText sx={{color:"text.primary"}} primary={<Box sx={{display:"flex",alignItems:"center",width:"100%",gap:1}}><Box sx={{display:"flex",alignItems:"center",gap:1,minWidth:0,flex:1}}><span>{item.name}</span>{item.hasBleed&&<img className="initiative-bleed-icon" src="https://herbybow.github.io/Effect-Tracker/icon.svg" alt="Bleed active"/>}</Box>{!!item.turnDamage&&<Typography component="span" className="initiative-bleed-damage">−{item.turnDamage}</Typography>}</Box>}/>
   </ListItem>:null)}</List></Box>
  </Stack>;
 }
