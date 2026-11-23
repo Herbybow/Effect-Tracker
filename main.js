@@ -49,15 +49,15 @@ async function syncBleedMarkers(){
   const markerId=data.bleedMarkerId;
   const markerVersion=data.bleedMarkerVersion||0;
   const hasBleed=bleedsOf(item).length>0;
-  if(hasBleed&&(!markerId||markerVersion!==2)){
+  if(hasBleed&&(!markerId||markerVersion!==3)){
    if(markerId)await OBR.scene.items.deleteItems([markerId]);
    const tokenHeight=(item.image?.height||100)/(item.grid?.dpi||1)*(item.scale?.y||1);
    const marker=buildImage(
-    {width:12,height:12,url:"https://herbybow.github.io/Effect-Tracker/bleed.svg",mime:"image/svg+xml"},
+    {width:8,height:8,url:"https://herbybow.github.io/Effect-Tracker/bleed.svg",mime:"image/svg+xml"},
     {dpi:1,offset:{x:0,y:0}}
    ).name("Bleed marker").description("Indicates that this character has an active Bleed effect.")
-    .position({x:item.position.x,y:item.position.y-tokenHeight/2-6}).layer("ATTACHMENT").attachedTo(item.id).locked(true).disableHit(true).build();
-   await OBR.scene.items.updateItems([item.id],draft=>{for(const token of draft){token.metadata={...token.metadata,[NS]:{...(token.metadata?.[NS]||{}),bleedMarkerId:marker.id,bleedMarkerVersion:2}};}});
+    .position({x:item.position.x-4,y:item.position.y-tokenHeight/2-4}).layer("ATTACHMENT").attachedTo(item.id).locked(true).disableHit(true).build();
+   await OBR.scene.items.updateItems([item.id],draft=>{for(const token of draft){token.metadata={...token.metadata,[NS]:{...(token.metadata?.[NS]||{}),bleedMarkerId:marker.id,bleedMarkerVersion:3}};}});
    await OBR.scene.items.addItems([marker]);
   }else if(!hasBleed&&markerId){
    await OBR.scene.items.deleteItems([markerId]);
