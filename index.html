@@ -23,21 +23,24 @@
     </section>
 
     <div id="bleed-controls" class="bleed-controls">
-      <div class="effect-heading"><img class="drop" src="./effects/Bleed.svg" alt="Bleed" /><div><h3>Bleed</h3><p class="muted">Choose a power to apply it to this character</p></div></div>
-      <div class="tiers" id="tiers">
+      <div class="effect-columns">
+        <div class="effect-column">
+          <img class="drop" src="./effects/Bleed.svg" alt="Bleed" />
+          <div class="tiers" id="tiers">
         <button data-tier="1">3x1</button>
         <button data-tier="2">3x2</button>
         <button data-tier="3">3x3</button>
         <button data-tier="4">3x4</button>
         <button data-tier="5">3x5</button>
+          </div>
+        </div>
       </div>
-      <p class="hint">Each click adds a separate Bleed. Existing Bleeds are never replaced.</p>
     </div>
 
     <div id="toast" role="status" aria-live="polite"></div>
   </main>
   <script type="module">
-    import("./main.js?rev=20261124-compactbleed6").catch((error) => {
+    import("./main.js?rev=20261124-bleedcolumns1").catch((error) => {
       console.error("Effect Tracker module failed to load:", error);
     });
   </script>
