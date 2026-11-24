@@ -14,8 +14,8 @@ function active(){return characters.find(x=>x.id===activeId)||null;}
 function viewed(){return characters.find(x=>x.id===selectedId)||active();}
 function render(){
  const item=viewed(), full=!!item&&item.id===activeId;
- $("character-name").textContent=item?.name||"No character assigned";
- $("selection-label").textContent=!item?"Right-click a character token and choose Assign Effect Tracker.":full?"Your assigned character · Full effect controls":"Viewing another character · Read-only effect summary";
+ const assignButton=$("assign-character"), candidate=characters.find(c=>c.id===selectedId);\n if(activeId){$("character-name").textContent=active()?.name||"No character assigned";assignButton.hidden=!candidate||candidate.id===activeId;assignButton.disabled=!candidate||candidate.id===activeId;assignButton.textContent=candidate&&candidate.id!==activeId?`Assign ${candidate.name||"selected character"}`:"Assign";}\n else {$("character-name").textContent="";assignButton.hidden=false;assignButton.disabled=!candidate;assignButton.textContent=candidate?`Assign ${candidate.name||"selected character"}`:"Select a character on the map";}
+ $("selection-label").textContent=!item?"Select a character token on the map, then press Assign.":full?"Your assigned character · Full effect controls":"Viewing another character · Read-only effect summary";
  const current=$("current-effects");current.replaceChildren();
  if(!item){current.className="empty";current.textContent="Assign a character to see its current effects.";}
  else {const bs=bleedsOf(item);current.className=bs.length?"current-list":"empty";
@@ -48,8 +48,7 @@ async function applyBleed(power){const item=active();if(!item){notify("Assign a 
 async function testTick(){const item=active(),bs=item?bleedsOf(item):[];if(!bs.length)return;const total=bs.reduce((sum,b)=>sum+b.power,0);try{await update(item.id,d=>{const v=Array.isArray(d.effects.bleed)?d.effects.bleed:[];d.effects.bleed=v.map(b=>({...b,charges:Math.max(0,Number(b.charges)-1)})).filter(b=>b.charges>0);if(!d.effects.bleed.length)delete d.effects.bleed;});notify(`Test tick: ${item.name||"Character"} would lose ${total} HP. One charge consumed from each Bleed; HP is not modified yet.`);await refresh();}catch(e){console.error(e);notify(`Could not consume charges: ${e?.message||e}`);}}
 OBR.onReady(()=>{void(async()=>{try{
  document.querySelectorAll("#tiers button[data-tier]").forEach(b=>b.addEventListener("click",()=>applyBleed(Number(b.dataset.tier))));
- $("test-tick").addEventListener("click",testTick);$("refresh").addEventListener("click",refresh);$("reload-effects").addEventListener("click",refresh);
- await OBR.contextMenu.create({id:`${MENU}/assign`,icons:[{icon:"https://herbybow.github.io/Effect-Tracker/assign.svg",label:"Assign to My Effect Tracker",filter:{max:1,every:[{key:"layer",value:"CHARACTER"}]}}],async onClick(c){const i=c.items[0];if(!i)return;await setActive(i.id);notify(`${i.name||"Character"} is now your assigned tracker.`);}});
+ $("test-tick").addEventListener("click",testTick);$("reload-effects").addEventListener("click",refresh);$("assign-character").addEventListener("click",async()=>{const candidate=characters.find(c=>c.id===selectedId);if(!candidate){notify("Select a character token on the map first.");return;}try{await setActive(candidate.id);notify(`${candidate.name||"Character"} is now assigned to your Effect Tracker.`);}catch(e){console.error(e);notify(`Could not assign character: ${e?.message||e}`);}});
  await OBR.contextMenu.create({id:`${MENU}/remove`,icons:[{icon:"https://herbybow.github.io/Effect-Tracker/unassign.svg",label:"Clear My Active Tracker",filter:{max:1,every:[{key:"layer",value:"CHARACTER"}]}}],async onClick(){const meta=await OBR.player.getMetadata(),data={...(meta?.[NS]||{}),activeCharacterId:null};await OBR.player.setMetadata({[NS]:data});personalData=data;activeId=null;selectedId=null;render();notify("Your active tracker was cleared.");}});
  OBR.scene.items.onChange(()=>{void refresh();});
  OBR.player.onChange(player=>{const picked=(player?.selection||[]).find(id=>characters.some(c=>c.id===id));if(picked){selectedId=picked;render();}});
