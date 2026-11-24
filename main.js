@@ -1,6 +1,6 @@
 import OBR, { buildImage } from "@owlbear-rodeo/sdk";
 const NS="com.effect-tracker/data", MENU="com.effect-tracker";
-let characters=[], activeId=null, selectedId=null, busy=false, queued=false, personalData={};
+let characters=[], activeId=null, selectedId=null, busy=false, queued=false, personalData={}, markerDiagnostic="Waiting for scene data…";
 const $=id=>document.getElementById(id);
 const isCharacter=item=>item?.layer==="CHARACTER"&&item?.type==="IMAGE";
 const MARKER_NAME="Effect Tracker Bleed";
@@ -18,6 +18,7 @@ function render(){
  const item=viewed(), full=!!item&&item.id===activeId;
  $("character-name").textContent=item?.name||"No character assigned";
  $("selection-label").textContent=!item?"Right-click a character token and choose Assign Effect Tracker.":full?"Your assigned character · Full effect controls":"Viewing another character · Read-only effect summary";
+ const debug=$("marker-debug");if(debug)debug.textContent=markerDiagnostic;
  const current=$("current-effects");current.replaceChildren();
  if(!item){current.className="empty";current.textContent="Assign a character to see its current effects.";}
  else {const bs=bleedsOf(item);current.className=bs.length?"current-list":"empty";
@@ -44,15 +45,21 @@ async function migratePersonalEffects(){
 }
 async function syncBleedMarkers(){
  const tokens=await OBR.scene.items.getItems(isCharacter);
+ const allItems=await OBR.scene.items.getItems();
+ markerDiagnostic="No character with active Bleed found.";
  for(const token of tokens){
   const data=token.metadata?.[NS]||{},savedId=data.bleedMarkerId;
   const attachments=(await OBR.scene.items.getItemAttachments([token.id]))||[];
+  const direct=allItems.filter(item=>item.attachedTo===token.id);
+  const describe=item=>`${item.name||"(unnamed)"} [${item.id?.slice(0,8)||"no id"}] layer=${item.layer||"?"} attachedTo=${item.attachedTo?.slice(0,8)||"none"} pos=${Math.round(item.position?.x||0)},${Math.round(item.position?.y||0)} image=${item.image?.width||"?"}x${item.image?.height||"?"} url=${item.image?.url?.split("/").pop()||"none"}`;
   const markers=attachments.filter(item=>item.id===savedId||item.name==="Bleed marker"||item.name==="BLEED MARKER TEST v6"||item.name==="BLEED MARKER TEST v7"||item.name==="BLEED MARKER TEST v8"||item.name===MARKER_NAME||item.image?.url?.includes("/effects/Bleed.svg"));
   const hasBleed=bleedsOf(token).length>0;
+  let action=hasBleed?"checking active marker":"checking cleanup";
   if(!hasBleed){
    const ids=[...new Set([...markers.map(item=>item.id),...(savedId?[savedId]:[])])];
    if(ids.length)await OBR.scene.items.deleteItems(ids);
    if(savedId)await OBR.scene.items.updateItems([token.id],draft=>{for(const item of draft){const meta={...(item.metadata?.[NS]||{})};delete meta.bleedMarkerId;item.metadata={...item.metadata,[NS]:meta};}});
+   if(token.id===activeId||!activeId)markerDiagnostic=`Token: ${token.name||token.id}\nBleed: no\nSaved marker ID: ${savedId||"none"}\ngetItemAttachments: ${attachments.length}\nDirect attached items: ${direct.length}\n${direct.slice(0,6).map(describe).join("\n")||"No direct attachments"}`;
    continue;
   }
   const markerSize=1,contentSize=21,expectedDpi=contentSize/markerSize;
@@ -62,7 +69,7 @@ async function syncBleedMarkers(){
   const existing=markers.find(item=>item.name===MARKER_NAME&&item.id===savedId);
   const samePosition=existing&&Math.abs(existing.position.x-position.x)<0.5&&Math.abs(existing.position.y-position.y)<0.5;
   const sameSize=existing&&Math.abs((Number(existing.grid?.dpi)||0)-expectedDpi)<0.001;
-  if(existing&&markers.length===1&&samePosition&&sameSize)continue;
+  if(existing&&markers.length===1&&samePosition&&sameSize){action="kept existing marker";if(token.id===activeId||!activeId)markerDiagnostic=`Token: ${token.name||token.id}\nBleed: yes\nSaved marker ID: ${savedId||"none"}\ngetItemAttachments: ${attachments.length} · marker matches: ${markers.length}\nDirect attached items: ${direct.length}\nAction: ${action}\n${direct.slice(0,6).map(describe).join("\n")||"No direct attachments"}`;continue;}
   const ids=[...new Set([...markers.map(item=>item.id),...(savedId?[savedId]:[])])];
   if(ids.length)await OBR.scene.items.deleteItems(ids);
   const marker=buildImage(
@@ -73,6 +80,7 @@ async function syncBleedMarkers(){
   marker.disableAttachmentBehavior=["SCALE","ROTATION"];
   await OBR.scene.items.addItems([marker]);
   await OBR.scene.items.updateItems([token.id],draft=>{for(const item of draft){const meta={...(item.metadata?.[NS]||{})};meta.bleedMarkerId=marker.id;item.metadata={...item.metadata,[NS]:meta};}});
+  if(token.id===activeId||!activeId)markerDiagnostic=`Token: ${token.name||token.id}\nBleed: yes\nSaved marker ID before: ${savedId||"none"}\ngetItemAttachments: ${attachments.length} · marker matches: ${markers.length}\nDirect attached items before: ${direct.length}\nAction: ${action}; created ${marker.id}\n${direct.slice(0,6).map(describe).join("\n")||"No direct attachments before creation"}`;
  }
 }
 async function refresh(){if(busy){queued=true;return;}busy=true;try{characters=await OBR.scene.items.getItems(isCharacter);const meta=await OBR.player.getMetadata();personalData=meta?.[NS]||{};await migratePersonalEffects();await syncBleedMarkers();const preferred=personalData.activeCharacterId;activeId=characters.some(i=>i.id===preferred)?preferred:null;if(!selectedId||!characters.some(i=>i.id===selectedId))selectedId=((await OBR.player.getSelection())||[]).find(id=>characters.some(i=>i.id===id))||null;render();}catch(e){console.error(e);$("selection-label").textContent=`Could not load characters: ${e?.message||e}`;}finally{busy=false;if(queued){queued=false;void refresh();}}}
