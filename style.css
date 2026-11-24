@@ -39,3 +39,9 @@
 .effect-column>.drop{width:38px;height:38px;margin:0 auto}
 .effect-column .tiers{display:flex;flex-direction:column;gap:6px;width:100%}
 .effect-column .tiers button{width:100%;min-height:32px;padding:6px 2px;font-size:12px;border-radius:7px}
+
+.character-actions{display:flex;align-items:center;gap:7px;flex:0 0 auto}
+.character-actions .assign-button{white-space:nowrap}
+.initiative-button{background:#393340;border-color:#625568;color:#f0e8f2}
+.clear-panel{margin-top:12px}
+.clear-panel .secondary{margin-top:0}
