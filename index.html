@@ -13,17 +13,12 @@
     </header>
 
     <section class="panel">
-      <div class="character-title"><strong id="character-name" class="character-name"></strong><button id="assign-character" class="assign-button" type="button" disabled>Select a character on the map</button></div>
-      <p id="selection-label" class="muted" hidden>Select a character token on the map, then press Assign.</p>
-    </section>
-
-    <section class="panel">
       <div class="section-title"><h2>Current</h2><span class="pill">This character</span></div>
       <div id="current-effects" class="empty">Select a character token on the map, then press Assign to see its current effects.</div>
     </section>
 
-    <section class="panel bleed-panel">
-      <div class="effect-heading"><img class="drop" src="./effects/Bleed.svg" alt="Bleed" /><div><h2>Bleed</h2><p class="muted">Choose a power to apply it to this character</p></div></div>
+    <div id="bleed-controls" class="bleed-controls">
+      <div class="effect-heading"><img class="drop" src="./effects/Bleed.svg" alt="Bleed" /><div><h3>Bleed</h3><p class="muted">Choose a power to apply it to this character</p></div></div>
       <div class="tiers" id="tiers">
         <button data-tier="1">3x1</button>
         <button data-tier="2">3x2</button>
@@ -32,10 +27,11 @@
         <button data-tier="5">3x5</button>
       </div>
       <p class="hint">Each click adds a separate Bleed. Existing Bleeds are never replaced.</p>
-    </section>
+    </div>
 
     <section class="panel">
-      <div class="section-title"><h2>Active Effect</h2><button id="reload-effects" class="text-button">Refresh</button></div>
+      <div class="section-title"><h2>Active Effect</h2><div class="active-actions"><strong id="character-name" class="character-name"></strong><button id="assign-character" class="assign-button" type="button" disabled>Select a character on the map</button><button id="reload-effects" class="text-button">Refresh</button></div></div>
+      <p id="selection-label" class="muted" hidden>Select a character token on the map, then press Assign.</p>
       <div id="effects" class="empty">No active Bleed on this character.</div>
       <button id="test-tick" class="secondary" disabled>Test: consume one Bleed charge</button>
       <p class="warning">Test only: calculates combined damage and consumes one charge from every Bleed. HP and automatic initiative are not connected yet.</p>
@@ -43,7 +39,7 @@
     <div id="toast" role="status" aria-live="polite"></div>
   </main>
   <script type="module">
-    import("./main.js?rev=20261124-assign2").catch((error) => {
+    import("./main.js?rev=20261124-layout3").catch((error) => {
       const label = document.getElementById("selection-label");
       if (label) label.textContent = `Effect Tracker failed to start: ${error?.message || error}`;
       console.error("Effect Tracker module failed to load:", error);
