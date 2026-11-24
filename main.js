@@ -14,7 +14,9 @@ function active(){return characters.find(x=>x.id===activeId)||null;}
 function viewed(){return characters.find(x=>x.id===selectedId)||active();}
 function render(){
  const item=viewed(), full=!!item&&item.id===activeId;
- const assignButton=$("assign-character"), candidate=characters.find(c=>c.id===selectedId);\n if(activeId){$("character-name").textContent=active()?.name||"No character assigned";assignButton.hidden=!candidate||candidate.id===activeId;assignButton.disabled=!candidate||candidate.id===activeId;assignButton.textContent=candidate&&candidate.id!==activeId?`Assign ${candidate.name||"selected character"}`:"Assign";}\n else {$("character-name").textContent="";assignButton.hidden=false;assignButton.disabled=!candidate;assignButton.textContent=candidate?`Assign ${candidate.name||"selected character"}`:"Select a character on the map";}
+ const assignButton=$("assign-character"), candidate=characters.find(c=>c.id===selectedId);
+ if(activeId){$("character-name").textContent=active()?.name||"No character assigned";assignButton.hidden=!candidate||candidate.id===activeId;assignButton.disabled=!candidate||candidate.id===activeId;assignButton.textContent=candidate&&candidate.id!==activeId?`Assign ${candidate.name||"selected character"}`:"Assign";}
+ else {$("character-name").textContent="";assignButton.hidden=false;assignButton.disabled=!candidate;assignButton.textContent=candidate?`Assign ${candidate.name||"selected character"}`:"Select a character on the map";}
  $("selection-label").textContent=!item?"Select a character token on the map, then press Assign.":full?"Your assigned character · Full effect controls":"Viewing another character · Read-only effect summary";
  const current=$("current-effects");current.replaceChildren();
  if(!item){current.className="empty";current.textContent="Assign a character to see its current effects.";}
