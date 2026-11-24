@@ -24,7 +24,7 @@ function render(){
  if(!item){current.className="empty";current.textContent="Assign a character to see its current effects.";}
  else {const bs=bleedsOf(item);current.className=bs.length?"current-list":"empty";
   if(!bs.length)current.textContent="No Effect";
-  else {const tags=document.createElement("div");tags.className="current-effect-tags";for(const b of bs){const tag=document.createElement("span");tag.className="effect-tag";tag.textContent=`3×${b.power} · ${b.charges}/3 charges`;tags.append(tag);}current.append(tags);}
+  else {const tags=document.createElement("div");tags.className="current-effect-tags";for(const b of bs){const tag=document.createElement("span");tag.className="effect-tag";const amount=document.createElement("span");amount.textContent=`${b.charges}×${b.power}`;const icon=document.createElement("img");icon.className="current-bleed-icon";icon.src="./effects/Bleed.svg";icon.alt="";tag.append(amount,icon);tags.append(tag);}current.append(tags);}
  }
  $("bleed-controls").hidden=!full;
 
