@@ -32,3 +32,10 @@
 
 .effect-tag{align-items:center;gap:5px}
 .current-bleed-icon{width:15px;height:15px;object-fit:contain;display:block;flex:0 0 auto}
+
+/* Compact effect columns: each effect gets its own icon and button column. */
+.effect-columns{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.effect-column{display:flex;flex:0 0 64px;flex-direction:column;align-items:center;gap:8px}
+.effect-column>.drop{width:38px;height:38px;margin:0 auto}
+.effect-column .tiers{display:flex;flex-direction:column;gap:6px;width:100%}
+.effect-column .tiers button{width:100%;min-height:32px;padding:6px 2px;font-size:12px;border-radius:7px}
