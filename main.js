@@ -24,10 +24,9 @@ function render(){
   if(!bs.length)current.textContent="No active effects on this character.";
   else {const tags=document.createElement("div");tags.className="current-effect-tags";for(const b of bs){const tag=document.createElement("span");tag.className="effect-tag";tag.textContent=`3×${b.power} · ${b.charges}/3 charges`;tags.append(tag);}current.append(tags);}
  }
- document.querySelector(".bleed-panel").hidden=!full;
- $("effects").closest(".panel").hidden=!full;
+ $("bleed-controls").hidden=!full;
  const host=$("effects");host.replaceChildren();const bs=item?bleedsOf(item):[];
- if(!full){$("test-tick").disabled=true;return;}
+ if(!full){host.className="empty";host.textContent=item?"Select this character with Assign to manage its effects.":"Select a character token on the map, then press Assign."; $("test-tick").disabled=true;return;}
  if(!bs.length){host.className="empty";host.textContent="No active Bleed on this character."; $("test-tick").disabled=true;return;}
  host.className="";for(const [i,b] of bs.entries()){const row=document.createElement("div");row.className="effect-row";const name=document.createElement("strong");name.textContent=`Bleed ${i+1}`;const detail=document.createElement("span");detail.textContent=`3×${b.power} · ${b.charges}/3 charges`;row.append(name,detail);host.append(row);}
  const total=bs.reduce((sum,b)=>sum+b.power,0),p=document.createElement("p");p.className="hint";p.textContent=`Combined damage at the next turn: ${total} HP. One charge will be consumed from each Bleed.`;host.append(p);$("test-tick").disabled=false;
