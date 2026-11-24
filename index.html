@@ -14,7 +14,7 @@
 
     <div class="character-assignment">
       <h2 id="character-name">Select a character</h2>
-      <button id="assign-character" class="assign-button" type="button" hidden>Assign</button>
+      <div class="character-actions"><button id="assign-character" class="assign-button" type="button" hidden>Assign</button><button id="add-to-initiative" class="assign-button initiative-button" type="button" hidden>Add to Initiative</button></div>
     </div>
 
     <section class="panel">
@@ -36,6 +36,10 @@
         </div>
       </div>
     </div>
+
+    <section class="panel clear-panel">
+      <button id="clear-bleed" class="secondary" type="button">Clear</button>
+    </section>
 
     <div id="toast" role="status" aria-live="polite"></div>
   </main>
