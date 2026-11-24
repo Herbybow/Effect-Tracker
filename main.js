@@ -51,7 +51,7 @@ async function syncBleedMarkers(){
   if(hasBleed&&(!markerId||markerVersion!==4)){
    if(markerId)await OBR.scene.items.deleteItems([markerId]);
    const dpi=item.grid?.dpi||1;
-   const tokenWidth=(item.image?.width||100)/dpi*(item.scale?.x||1);
+   const tokenWidth=(item.image?.width||100)/dpi*(item.scale?.x||2);
    const tokenHeight=(item.image?.height||100)/dpi*(item.scale?.y||1);
    const marker=buildImage(
     {width:2,height:2,url:"https://herbybow.github.io/Effect-Tracker/effects/Bleed.svg",mime:"image/svg+xml"},
