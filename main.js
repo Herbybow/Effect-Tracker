@@ -79,8 +79,8 @@ async function syncBleedMarkers(){
   const tokenHeight=(Number(token.image?.height)||100)/gridDpi*Math.abs(Number(scale.y)||1);
   const markerSize=1;
   const marker=buildImage(
-   {width:21.26,height:21.26,url:MARKER_URL,mime:"image/svg+xml"},
-   {dpi:21/markerSize,offset:{x:0,y:0}}
+   {width:1,height:1,url:MARKER_URL,mime:"image/svg+xml"},
+   {dpi:1/markerSize,offset:{x:0,y:0}}
   ).name(MARKER_NAME).description("Bleed effect marker.")
    .position({x:token.position.x,y:token.position.y-tokenHeight/2-markerSize/2})
    .layer("ATTACHMENT").attachedTo(token.id).locked(true).disableHit(true).build();
