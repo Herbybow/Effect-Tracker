@@ -45,54 +45,34 @@ async function migratePersonalEffects(){
 async function syncBleedMarkers(){
  const tokens=await OBR.scene.items.getItems(isCharacter);
  for(const token of tokens){
-  const data=token.metadata?.[NS]||{};
-  const savedId=data.bleedMarkerId;
+  const data=token.metadata?.[NS]||{},savedId=data.bleedMarkerId;
   const attachments=(await OBR.scene.items.getItemAttachments([token.id]))||[];
-  const markers=attachments.filter(item=>
-   item.id===savedId||
-   item.name==="Bleed marker"||
-   item.name==="BLEED MARKER TEST v6"||
-   item.name==="BLEED MARKER TEST v7"||
-   item.name==="BLEED MARKER TEST v8"||
-   item.name===MARKER_NAME||
-   item.image?.url?.includes("/effects/Bleed.svg")
-  );
+  const markers=attachments.filter(item=>item.id===savedId||item.name==="Bleed marker"||item.name==="BLEED MARKER TEST v6"||item.name==="BLEED MARKER TEST v7"||item.name==="BLEED MARKER TEST v8"||item.name===MARKER_NAME||item.image?.url?.includes("/effects/Bleed.svg"));
   const hasBleed=bleedsOf(token).length>0;
   if(!hasBleed){
    const ids=[...new Set([...markers.map(item=>item.id),...(savedId?[savedId]:[])])];
    if(ids.length)await OBR.scene.items.deleteItems(ids);
-   if(savedId)await OBR.scene.items.updateItems([token.id],draft=>{
-    for(const item of draft){
-     const meta={...(item.metadata?.[NS]||{})};
-     delete meta.bleedMarkerId;
-     item.metadata={...item.metadata,[NS]:meta};
-    }
-   });
+   if(savedId)await OBR.scene.items.updateItems([token.id],draft=>{for(const item of draft){const meta={...(item.metadata?.[NS]||{})};delete meta.bleedMarkerId;item.metadata={...item.metadata,[NS]:meta};}});
    continue;
   }
+  const markerSize=1,contentSize=21,expectedDpi=contentSize/markerSize;
+  const scale=token.scale||{x:1,y:1},gridDpi=Number(token.grid?.dpi)||1;
+  const tokenHeight=(Number(token.image?.height)||100)/gridDpi*Math.abs(Number(scale.y)||1);
+  const position={x:token.position.x,y:token.position.y-tokenHeight/2-markerSize/2};
   const existing=markers.find(item=>item.name===MARKER_NAME&&item.id===savedId);
-  if(existing&&markers.length===1)continue;
+  const samePosition=existing&&Math.abs(existing.position.x-position.x)<0.5&&Math.abs(existing.position.y-position.y)<0.5;
+  const sameSize=existing&&Math.abs((Number(existing.grid?.dpi)||0)-expectedDpi)<0.001;
+  if(existing&&markers.length===1&&samePosition&&sameSize)continue;
   const ids=[...new Set([...markers.map(item=>item.id),...(savedId?[savedId]:[])])];
   if(ids.length)await OBR.scene.items.deleteItems(ids);
-  const scale=token.scale||{x:1,y:1};
-  const gridDpi=Number(token.grid?.dpi)||1;
-  const tokenHeight=(Number(token.image?.height)||100)/gridDpi*Math.abs(Number(scale.y)||1);
-  const markerSize=1;
   const marker=buildImage(
-   {width:1,height:1,url:MARKER_URL,mime:"image/svg+xml"},
-   {dpi:1/markerSize,offset:{x:0,y:0}}
+   {width:contentSize,height:contentSize,url:MARKER_URL,mime:"image/svg+xml"},
+   {dpi:expectedDpi,offset:{x:0,y:0}}
   ).name(MARKER_NAME).description("Bleed effect marker.")
-   .position({x:token.position.x,y:token.position.y-tokenHeight/2-markerSize/2})
-   .layer("ATTACHMENT").attachedTo(token.id).locked(true).disableHit(true).build();
+   .position(position).layer("ATTACHMENT").attachedTo(token.id).locked(true).disableHit(true).build();
   marker.disableAttachmentBehavior=["SCALE","ROTATION"];
   await OBR.scene.items.addItems([marker]);
-  await OBR.scene.items.updateItems([token.id],draft=>{
-   for(const item of draft){
-    const meta={...(item.metadata?.[NS]||{})};
-    meta.bleedMarkerId=marker.id;
-    item.metadata={...item.metadata,[NS]:meta};
-   }
-  });
+  await OBR.scene.items.updateItems([token.id],draft=>{for(const item of draft){const meta={...(item.metadata?.[NS]||{})};meta.bleedMarkerId=marker.id;item.metadata={...item.metadata,[NS]:meta};}});
  }
 }
 async function refresh(){if(busy){queued=true;return;}busy=true;try{characters=await OBR.scene.items.getItems(isCharacter);const meta=await OBR.player.getMetadata();personalData=meta?.[NS]||{};await migratePersonalEffects();await syncBleedMarkers();const preferred=personalData.activeCharacterId;activeId=characters.some(i=>i.id===preferred)?preferred:null;if(!selectedId||!characters.some(i=>i.id===selectedId))selectedId=((await OBR.player.getSelection())||[]).find(id=>characters.some(i=>i.id===id))||null;render();}catch(e){console.error(e);$("selection-label").textContent=`Could not load characters: ${e?.message||e}`;}finally{busy=false;if(queued){queued=false;void refresh();}}}
