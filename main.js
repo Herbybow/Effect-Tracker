@@ -54,7 +54,7 @@ async function syncBleedMarkers(){
    const tokenWidth=(item.image?.width||100)/dpi*(item.scale?.x||1);
    const tokenHeight=(item.image?.height||100)/dpi*(item.scale?.y||1);
    const marker=buildImage(
-    {width:12,height:12,url:"https://herbybow.github.io/Effect-Tracker/effects/Bleed.svg",mime:"image/svg+xml"},
+    {width:2,height:2,url:"https://herbybow.github.io/Effect-Tracker/effects/Bleed.svg",mime:"image/svg+xml"},
     {dpi:1,offset:{x:0,y:0}}
    ).name("Bleed marker").description("Indicates that this character has an active Bleed effect.")
     .position({x:item.position.x-tokenWidth/3,y:item.position.y-tokenHeight/2-6})
