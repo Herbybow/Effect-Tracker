@@ -18,7 +18,7 @@
     </div>
 
     <section class="panel">
-      <div class="section-title"><h2>Current</h2><span class="pill">This character</span></div>
+      <div class="section-title"><h2>Current</h2></div>
       <div id="current-effects" class="empty">Select a character token on the map, then press Assign to see its current effects.</div>
     </section>
 
@@ -34,19 +34,10 @@
       <p class="hint">Each click adds a separate Bleed. Existing Bleeds are never replaced.</p>
     </div>
 
-    <section class="panel">
-      <div class="section-title"><h2>Active Effect</h2><button id="reload-effects" class="text-button">Refresh</button></div>
-      <p id="selection-label" class="muted" hidden>Select a character token on the map, then press Assign.</p>
-      <div id="effects" class="empty">No active Bleed on this character.</div>
-      <button id="test-tick" class="secondary" disabled>Test: consume one Bleed charge</button>
-      <p class="warning">Test only: calculates combined damage and consumes one charge from every Bleed. HP and automatic initiative are not connected yet.</p>
-    </section>
     <div id="toast" role="status" aria-live="polite"></div>
   </main>
   <script type="module">
-    import("./main.js?rev=20261124-characterhead4").catch((error) => {
-      const label = document.getElementById("selection-label");
-      if (label) label.textContent = `Effect Tracker failed to start: ${error?.message || error}`;
+    import("./main.js?rev=20261124-cleanui5").catch((error) => {
       console.error("Effect Tracker module failed to load:", error);
     });
   </script>
