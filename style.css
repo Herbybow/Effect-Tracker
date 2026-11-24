@@ -17,3 +17,11 @@
 .character-title{display:flex;align-items:center;gap:8px}
 
 .assign-button{border:1px solid #874052;background:#512531;color:#fff0f3;border-radius:8px;padding:9px 12px;font-size:12px;font-weight:700;cursor:pointer}.assign-button:disabled{opacity:.55;cursor:default}.character-title{justify-content:space-between;gap:10px}.character-name{min-width:0;overflow-wrap:anywhere}
+
+.active-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.active-actions .character-name{margin:0;font-size:13px}
+.bleed-controls{border-top:1px solid #3b3542;margin-top:12px;padding-top:12px}
+.bleed-controls[hidden]{display:none}
+.bleed-controls .effect-heading h3{font-size:13px;margin:0}
+.section-title{gap:8px}
+.assign-button{white-space:nowrap}
