@@ -47,7 +47,7 @@ async function syncBleedMarkers(){
  for(const token of tokens){
   const data=token.metadata?.[NS]||{};
   const savedId=data.bleedMarkerId;
-  const attachments=await OBR.scene.items.getItemAttachments([token.id]);
+  const attachments=(await OBR.scene.items.getItemAttachments([token.id]))||[];
   const markers=attachments.filter(item=>
    item.id===savedId||
    item.name==="Bleed marker"||
@@ -79,8 +79,8 @@ async function syncBleedMarkers(){
   const tokenHeight=(Number(token.image?.height)||100)/gridDpi*Math.abs(Number(scale.y)||1);
   const markerSize=12;
   const marker=buildImage(
-   {width:markerSize,height:markerSize,url:MARKER_URL,mime:"image/svg+xml"},
-   {dpi:1,offset:{x:0,y:0}}
+   {width:21.26,height:21.26,url:MARKER_URL,mime:"image/svg+xml"},
+   {dpi:21.26/markerSize,offset:{x:0,y:0}}
   ).name(MARKER_NAME).description("Bleed effect marker.")
    .position({x:token.position.x,y:token.position.y-tokenHeight/2-markerSize/2})
    .layer("ATTACHMENT").attachedTo(token.id).locked(true).disableHit(true).build();
@@ -95,7 +95,7 @@ async function syncBleedMarkers(){
   });
  }
 }
-async function refresh(){if(busy){queued=true;return;}busy=true;try{characters=await OBR.scene.items.getItems(isCharacter);const meta=await OBR.player.getMetadata();personalData=meta?.[NS]||{};await migratePersonalEffects();await syncBleedMarkers();const preferred=personalData.activeCharacterId;activeId=characters.some(i=>i.id===preferred)?preferred:null;if(!selectedId||!characters.some(i=>i.id===selectedId))selectedId=(await OBR.player.getSelection()).find(id=>characters.some(i=>i.id===id))||null;render();}catch(e){console.error(e);$("selection-label").textContent=`Could not load characters: ${e?.message||e}`;}finally{busy=false;if(queued){queued=false;void refresh();}}}
+async function refresh(){if(busy){queued=true;return;}busy=true;try{characters=await OBR.scene.items.getItems(isCharacter);const meta=await OBR.player.getMetadata();personalData=meta?.[NS]||{};await migratePersonalEffects();await syncBleedMarkers();const preferred=personalData.activeCharacterId;activeId=characters.some(i=>i.id===preferred)?preferred:null;if(!selectedId||!characters.some(i=>i.id===selectedId))selectedId=((await OBR.player.getSelection())||[]).find(id=>characters.some(i=>i.id===id))||null;render();}catch(e){console.error(e);$("selection-label").textContent=`Could not load characters: ${e?.message||e}`;}finally{busy=false;if(queued){queued=false;void refresh();}}}
 async function update(id,mutate){await OBR.scene.items.updateItems([id],items=>{for(const item of items){const d=JSON.parse(JSON.stringify(item.metadata?.[NS]||{}));d.effects??={};mutate(d);item.metadata={...item.metadata,[NS]:d};}});}
 async function setActive(id){const meta=await OBR.player.getMetadata(),data=JSON.parse(JSON.stringify(meta?.[NS]||{}));data.activeCharacterId=id;delete data.effectsByCharacter;await OBR.player.setMetadata({[NS]:data});personalData=data;activeId=id;selectedId=id;render();}
 async function applyBleed(power){const item=active();if(!item){notify("Assign a character first.");return;}try{await update(item.id,d=>{const v=d.effects.bleed,list=Array.isArray(v)?v:(v&&typeof v==="object"?[{id:v.id||"legacy",power:Number(v.power)||Number(v.damage)||1,charges:Math.max(0,Number(v.charges)||0),appliedAt:v.appliedAt||new Date().toISOString()}]:[]);list.push({id:crypto.randomUUID(),power,charges:3,appliedAt:new Date().toISOString(),schemaVersion:2});d.effects.bleed=list.filter(b=>b.charges>0);});notify(`Added a separate 3×${power} Bleed to ${item.name||"the character"}.`);await refresh();}catch(e){console.error(e);notify(`Could not apply Bleed: ${e?.message||e}`);}}
