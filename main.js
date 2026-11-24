@@ -15,9 +15,11 @@ function viewed(){return characters.find(x=>x.id===selectedId)||active();}
 function render(){
  const item=viewed(), full=!!item&&item.id===activeId;
  const assignButton=$("assign-character"), candidate=characters.find(c=>c.id===selectedId);
- if(activeId){$("character-name").textContent=active()?.name||"No character assigned";assignButton.hidden=!candidate||candidate.id===activeId;assignButton.disabled=!candidate||candidate.id===activeId;assignButton.textContent=candidate&&candidate.id!==activeId?`Assign ${candidate.name||"selected character"}`:"Assign";}
- else {$("character-name").textContent="";assignButton.hidden=false;assignButton.disabled=!candidate;assignButton.textContent=candidate?`Assign ${candidate.name||"selected character"}`:"Select a character on the map";}
- $("selection-label").textContent=!item?"Select a character token on the map, then press Assign.":full?"Your assigned character · Full effect controls":"Viewing another character · Read-only effect summary";
+ const displayedCharacter=candidate||active();
+ $("character-name").textContent=displayedCharacter?.name||"Select a character";
+ assignButton.hidden=!candidate||candidate.id===activeId;
+ assignButton.disabled=!candidate||candidate.id===activeId;
+ assignButton.textContent="Assign";
  const current=$("current-effects");current.replaceChildren();
  if(!item){current.className="empty";current.textContent="Assign a character to see its current effects.";}
  else {const bs=bleedsOf(item);current.className=bs.length?"current-list":"empty";
@@ -26,7 +28,7 @@ function render(){
  }
  $("bleed-controls").hidden=!full;
  const host=$("effects");host.replaceChildren();const bs=item?bleedsOf(item):[];
- if(!full){host.className="empty";host.textContent=item?"Select this character with Assign to manage its effects.":"Select a character token on the map, then press Assign."; $("test-tick").disabled=true;return;}
+ if(!full){host.className="empty";host.textContent=item?"Select this character with Assign to manage its effects.":"Select a character token on the map."; $("test-tick").disabled=true;return;}
  if(!bs.length){host.className="empty";host.textContent="No active Bleed on this character."; $("test-tick").disabled=true;return;}
  host.className="";for(const [i,b] of bs.entries()){const row=document.createElement("div");row.className="effect-row";const name=document.createElement("strong");name.textContent=`Bleed ${i+1}`;const detail=document.createElement("span");detail.textContent=`3×${b.power} · ${b.charges}/3 charges`;row.append(name,detail);host.append(row);}
  const total=bs.reduce((sum,b)=>sum+b.power,0),p=document.createElement("p");p.className="hint";p.textContent=`Combined damage at the next turn: ${total} HP. One charge will be consumed from each Bleed.`;host.append(p);$("test-tick").disabled=false;
@@ -42,7 +44,7 @@ async function migratePersonalEffects(){
  if(Object.keys(byCharacter).length){const clean={...personalData};delete clean.effectsByCharacter;await OBR.player.setMetadata({[NS]:clean});personalData=clean;}
 }
 
-async function refresh(){if(busy){queued=true;return;}busy=true;try{characters=await OBR.scene.items.getItems(isCharacter);const meta=await OBR.player.getMetadata();personalData=meta?.[NS]||{};await migratePersonalEffects();const preferred=personalData.activeCharacterId;activeId=characters.some(i=>i.id===preferred)?preferred:null;if(!selectedId||!characters.some(i=>i.id===selectedId))selectedId=((await OBR.player.getSelection())||[]).find(id=>characters.some(i=>i.id===id))||null;render();}catch(e){console.error(e);$("selection-label").textContent=`Could not load characters: ${e?.message||e}`;}finally{busy=false;if(queued){queued=false;void refresh();}}}
+async function refresh(){if(busy){queued=true;return;}busy=true;try{characters=await OBR.scene.items.getItems(isCharacter);const meta=await OBR.player.getMetadata();personalData=meta?.[NS]||{};await migratePersonalEffects();const preferred=personalData.activeCharacterId;activeId=characters.some(i=>i.id===preferred)?preferred:null;if(!selectedId||!characters.some(i=>i.id===selectedId))selectedId=((await OBR.player.getSelection())||[]).find(id=>characters.some(i=>i.id===id))||null;render();}catch(e){console.error(e);notify(`Could not load characters: ${e?.message||e}`);}finally{busy=false;if(queued){queued=false;void refresh();}}}
 async function update(id,mutate){await OBR.scene.items.updateItems([id],items=>{for(const item of items){const d=JSON.parse(JSON.stringify(item.metadata?.[NS]||{}));d.effects??={};mutate(d);item.metadata={...item.metadata,[NS]:d};}});}
 async function setActive(id){const meta=await OBR.player.getMetadata(),data=JSON.parse(JSON.stringify(meta?.[NS]||{}));data.activeCharacterId=id;delete data.effectsByCharacter;await OBR.player.setMetadata({[NS]:data});personalData=data;activeId=id;selectedId=id;render();}
 async function applyBleed(power){const item=active();if(!item){notify("Assign a character first.");return;}try{await update(item.id,d=>{const v=d.effects.bleed,list=Array.isArray(v)?v:(v&&typeof v==="object"?[{id:v.id||"legacy",power:Number(v.power)||Number(v.damage)||1,charges:Math.max(0,Number(v.charges)||0),appliedAt:v.appliedAt||new Date().toISOString()}]:[]);list.push({id:crypto.randomUUID(),power,charges:3,appliedAt:new Date().toISOString(),schemaVersion:2});d.effects.bleed=list.filter(b=>b.charges>0);});notify(`Added a separate 3×${power} Bleed to ${item.name||"the character"}.`);await refresh();}catch(e){console.error(e);notify(`Could not apply Bleed: ${e?.message||e}`);}}
@@ -54,6 +56,6 @@ OBR.onReady(()=>{void(async()=>{try{
  OBR.scene.items.onChange(()=>{void refresh();});
  OBR.player.onChange(player=>{const picked=(player?.selection||[]).find(id=>characters.some(c=>c.id===id));if(picked){selectedId=picked;render();}});
  OBR.scene.onReadyChange(ready=>{if(ready)void refresh();});await refresh();
- }catch(e){console.error(e);$("selection-label").textContent=`Startup error: ${e?.message||e}`;} })();});
-window.addEventListener("error",e=>{$("selection-label").textContent=`Script error: ${e.message||"unknown error"}`;});
-window.addEventListener("unhandledrejection",e=>{$("selection-label").textContent=`Connection error: ${e.reason?.message||e.reason||"unknown error"}`;});
+ }catch(e){console.error(e);notify(`Startup error: ${e?.message||e}`);} })();});
+window.addEventListener("error",e=>{console.error("Effect Tracker script error:",e.message);});
+window.addEventListener("unhandledrejection",e=>{console.error("Effect Tracker connection error:",e.reason);});
