@@ -49,7 +49,7 @@ async function syncBleedMarkers(){
   const hasBleed=bleedsOf(item).length>0;
   if(hasBleed&&!markerId){
    const marker=buildImage(
-    {width:21,height:21,url:"https://herbybow.github.io/Effect-Tracker/effects/Bleed.svg",mime:"image/svg+xml"},
+    {width:210,height:210,url:"https://herbybow.github.io/Effect-Tracker/effects/Bleed.svg",mime:"image/svg+xml"},
     {dpi:1,offset:{x:0,y:0}}
    ).name("Bleed marker").description("Indicates that this character has an active Bleed effect.")
     .position(item.position).layer("ATTACHMENT").attachedTo(item.id).locked(true).disableHit(true).build();
