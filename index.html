@@ -9,14 +9,12 @@
 <body>
   <main class="app">
     <header>
-      <div class="brand"><img src="./icon.svg" alt=""/><div><h1>Effect Tracker</h1><p>Version 0.1.2 · Bleed prototype</p></div></div>
-      <button id="refresh" class="quiet" title="Refresh selected token">↻</button>
+      <div class="brand"><img src="./icon.svg" alt=""/><div><h1>Effect Tracker</h1></div></div>
     </header>
 
     <section class="panel">
-      <div class="section-title"><h2>Character Name</h2></div>
       <div class="character-title"><strong id="character-name" class="character-name">No character assigned</strong></div>
-      <p id="selection-label" class="muted">Right-click a character token and choose Assign Effect Tracker.</p>
+      <p id="selection-label" class="muted" hidden>Right-click a character token and choose Assign Effect Tracker.</p>
     </section>
 
     <section class="panel">
@@ -42,11 +40,10 @@
       <button id="test-tick" class="secondary" disabled>Test: consume one Bleed charge</button>
       <p class="warning">Test only: calculates combined damage and consumes one charge from every Bleed. HP and automatic initiative are not connected yet.</p>
     </section>
-    <footer>Effect data is stored on each Owlbear scene item under a private Effect Tracker metadata key.</footer>
     <div id="toast" role="status" aria-live="polite"></div>
   </main>
   <script type="module">
-    import("./main.js").catch((error) => {
+    import("./main.js?rev=20261124-cleanup1").catch((error) => {
       const label = document.getElementById("selection-label");
       if (label) label.textContent = `Effect Tracker failed to start: ${error?.message || error}`;
       console.error("Effect Tracker module failed to load:", error);
