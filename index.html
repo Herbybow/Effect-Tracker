@@ -13,8 +13,8 @@
     </header>
 
     <section class="panel">
-      <div class="character-title"><strong id="character-name" class="character-name">No character assigned</strong></div>
-      <p id="selection-label" class="muted" hidden>Right-click a character token and choose Assign Effect Tracker.</p>
+      <div class="character-title"><strong id="character-name" class="character-name"></strong><button id="assign-character" class="assign-button" type="button" disabled>Select a character on the map</button></div>
+      <p id="selection-label" class="muted" hidden>Select a character token on the map, then press Assign.</p>
     </section>
 
     <section class="panel">
@@ -43,7 +43,7 @@
     <div id="toast" role="status" aria-live="polite"></div>
   </main>
   <script type="module">
-    import("./main.js?rev=20261124-cleanup1").catch((error) => {
+    import("./main.js?rev=20261124-assign1").catch((error) => {
       const label = document.getElementById("selection-label");
       if (label) label.textContent = `Effect Tracker failed to start: ${error?.message || error}`;
       console.error("Effect Tracker module failed to load:", error);
