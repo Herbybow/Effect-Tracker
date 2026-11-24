@@ -50,19 +50,19 @@ async function syncBleedMarkers(){
   const markerVersion=data.bleedMarkerVersion||0;
   const hasBleed=bleedsOf(item).length>0;
   const attachedMarkers=sceneItems.filter(candidate=>
-   candidate.layer==="ATTACHMENT"&&candidate.attachedTo===item.id&&candidate.name==="BLEED MARKER TEST v6"
+   candidate.layer==="ATTACHMENT"&&candidate.attachedTo===item.id&&(candidate.name==="Bleed marker"||candidate.name==="BLEED MARKER TEST v6"||candidate.name==="BLEED MARKER TEST v7")
   );
-  if(hasBleed&&(markerVersion!==6||attachedMarkers.length!==1||markerId!==attachedMarkers[0]?.id)){
+  if(hasBleed&&(markerVersion!==7||attachedMarkers.length!==1||markerId!==attachedMarkers[0]?.id)){
    const oldIds=[...new Set([...attachedMarkers.map(marker=>marker.id),...(markerId?[markerId]:[])])];
    if(oldIds.length)await OBR.scene.items.deleteItems(oldIds);
    const marker=buildImage(
     {width:40,height:40,url:"https://herbybow.github.io/Effect-Tracker/effects/Bleed.svg",mime:"image/svg+xml"},
     {dpi:1,offset:{x:0,y:0}}
-   ).name("BLEED MARKER TEST v6").description("Effect Tracker Bleed marker test v6.")
+   ).name("BLEED MARKER TEST v7").description("Effect Tracker Bleed marker test v7.")
     .position({x:item.position.x+40,y:item.position.y-40})
     .layer("ATTACHMENT").attachedTo(item.id).locked(true).disableHit(true).build();
    marker.disableAttachmentBehavior=["SCALE","ROTATION"];
-   await OBR.scene.items.updateItems([item.id],draft=>{for(const token of draft){token.metadata={...token.metadata,[NS]:{...(token.metadata?.[NS]||{}),bleedMarkerId:marker.id,bleedMarkerVersion:6}};}});
+   await OBR.scene.items.updateItems([item.id],draft=>{for(const token of draft){token.metadata={...token.metadata,[NS]:{...(token.metadata?.[NS]||{}),bleedMarkerId:marker.id,bleedMarkerVersion:7}};}});
    await OBR.scene.items.addItems([marker]);
   }else if(!hasBleed&&(markerId||attachedMarkers.length)){
    const oldIds=[...new Set([...attachedMarkers.map(marker=>marker.id),...(markerId?[markerId]:[])])];
