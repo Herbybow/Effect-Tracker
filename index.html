@@ -19,7 +19,7 @@
 
     <section class="panel">
       <div class="section-title"><h2>Current</h2><span class="pill">This character</span></div>
-      <div id="current-effects" class="empty">Assign a character from its right-click menu to see its current effects.</div>
+      <div id="current-effects" class="empty">Select a character token on the map, then press Assign to see its current effects.</div>
     </section>
 
     <section class="panel bleed-panel">
@@ -43,7 +43,7 @@
     <div id="toast" role="status" aria-live="polite"></div>
   </main>
   <script type="module">
-    import("./main.js?rev=20261124-assign1").catch((error) => {
+    import("./main.js?rev=20261124-assign2").catch((error) => {
       const label = document.getElementById("selection-label");
       if (label) label.textContent = `Effect Tracker failed to start: ${error?.message || error}`;
       console.error("Effect Tracker module failed to load:", error);
