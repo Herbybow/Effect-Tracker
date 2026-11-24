@@ -12,6 +12,11 @@
       <div class="brand"><img src="./icon.svg" alt=""/><div><h1>Effect Tracker</h1></div></div>
     </header>
 
+    <div class="character-assignment">
+      <h2 id="character-name">Select a character</h2>
+      <button id="assign-character" class="assign-button" type="button" hidden>Assign</button>
+    </div>
+
     <section class="panel">
       <div class="section-title"><h2>Current</h2><span class="pill">This character</span></div>
       <div id="current-effects" class="empty">Select a character token on the map, then press Assign to see its current effects.</div>
@@ -30,7 +35,7 @@
     </div>
 
     <section class="panel">
-      <div class="section-title"><h2>Active Effect</h2><div class="active-actions"><strong id="character-name" class="character-name"></strong><button id="assign-character" class="assign-button" type="button" disabled>Select a character on the map</button><button id="reload-effects" class="text-button">Refresh</button></div></div>
+      <div class="section-title"><h2>Active Effect</h2><button id="reload-effects" class="text-button">Refresh</button></div>
       <p id="selection-label" class="muted" hidden>Select a character token on the map, then press Assign.</p>
       <div id="effects" class="empty">No active Bleed on this character.</div>
       <button id="test-tick" class="secondary" disabled>Test: consume one Bleed charge</button>
@@ -39,7 +44,7 @@
     <div id="toast" role="status" aria-live="polite"></div>
   </main>
   <script type="module">
-    import("./main.js?rev=20261124-layout3").catch((error) => {
+    import("./main.js?rev=20261124-characterhead4").catch((error) => {
       const label = document.getElementById("selection-label");
       if (label) label.textContent = `Effect Tracker failed to start: ${error?.message || error}`;
       console.error("Effect Tracker module failed to load:", error);
