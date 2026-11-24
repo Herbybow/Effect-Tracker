@@ -21,8 +21,9 @@ function render(){
  assignButton.hidden=!candidate||candidate.id===activeId;
  assignButton.disabled=!candidate||candidate.id===activeId;
  assignButton.textContent="Assign";
- initiativeButton.hidden=!candidate;
- initiativeButton.disabled=!candidate;
+ const alreadyInInitiative=!!candidate&&candidate.metadata?.[INIT_NS]!==undefined;
+ initiativeButton.hidden=!candidate||alreadyInInitiative;
+ initiativeButton.disabled=!candidate||alreadyInInitiative;
  const current=$("current-effects");current.replaceChildren();
  if(!item){current.className="empty";current.textContent="Assign a character to see its current effects.";}
  else {const bs=bleedsOf(item);current.className=bs.length?"current-list":"empty";
@@ -48,7 +49,7 @@ async function update(id,mutate){await OBR.scene.items.updateItems([id],items=>{
 async function setActive(id){const meta=await OBR.player.getMetadata(),data=JSON.parse(JSON.stringify(meta?.[NS]||{}));data.activeCharacterId=id;delete data.effectsByCharacter;await OBR.player.setMetadata({[NS]:data});personalData=data;activeId=id;selectedId=id;render();}
 async function addToInitiative(id){
  const item=characters.find(c=>c.id===id);if(!item){notify("Select a character token on the map first.");return;}
- try{await OBR.scene.items.updateItems([id],items=>{for(const sceneItem of items){if(sceneItem.metadata?.[INIT_NS]===undefined){sceneItem.metadata={...sceneItem.metadata,[INIT_NS]:{count:"0",active:false}};}}});notify(`${item.name||"Character"} added to Initiative if not already present.`);}
+ try{await OBR.scene.items.updateItems([id],items=>{for(const sceneItem of items){if(sceneItem.metadata?.[INIT_NS]===undefined){sceneItem.metadata={...sceneItem.metadata,[INIT_NS]:{count:"0",active:false}};}}});notify(`${item.name||"Character"} added to Initiative.`);await refresh();}
  catch(e){console.error(e);notify(`Could not add to Initiative: ${e?.message||e}`);}
 }
 async function clearBleed(){const item=active();if(!item){notify("Assign a character first.");return;}try{let changed=false;await update(item.id,d=>{const raw=d.effects.bleed;const list=Array.isArray(raw)?raw:(raw&&typeof raw==="object"?[raw]:[]);const remaining=list.map(b=>{const charges=Math.max(0,Number(b.charges)||0);if(charges>0)changed=true;return {...b,charges:Math.max(0,charges-1)};}).filter(b=>b.charges>0);if(remaining.length)d.effects.bleed=remaining;else delete d.effects.bleed;});if(!changed){notify("No active Bleed charges to clear.");return;}notify("Consumed one charge from each active Bleed. No damage was dealt.");await refresh();}catch(e){console.error(e);notify(`Could not clear Bleed charges: ${e?.message||e}`);}}
