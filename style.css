@@ -29,3 +29,6 @@
 .character-assignment{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 2px 12px}
 .character-assignment h2{font-size:18px;line-height:1.25;margin:0;font-weight:750;min-width:0;overflow-wrap:anywhere}
 .character-assignment .assign-button{flex:0 0 auto}
+
+.effect-tag{align-items:center;gap:5px}
+.current-bleed-icon{width:15px;height:15px;object-fit:contain;display:block;flex:0 0 auto}
