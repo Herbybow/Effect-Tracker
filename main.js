@@ -49,9 +49,10 @@ async function syncBleedMarkers(){
   const hasBleed=bleedsOf(item).length>0;
   if(hasBleed&&!markerId){
    const marker=buildImage(
-    {width:210,height:210,url:"https://herbybow.github.io/Effect-Tracker/effects/Bleed.svg",mime:"image/svg+xml"},
-    {dpi:1,offset:{x:-1,y:-1}}
-   ).name("Bleed marker").description("Indicates that this character has an active Bleed effect.")
+const marker=buildImage(
+  {width:210,height:210,url:"https://herbybow.github.io/Effect-Tracker/effects/Bleed.svg",mime:"image/svg+xml"},
+  {dpi:1,offset:{x:0,y:0}}
+).name("Bleed marker").description("Indicates that this character has an active Bleed effect.")
     .position(item.position).layer("ATTACHMENT").attachedTo(item.id).locked(true).disableHit(true).build();
    await OBR.scene.items.updateItems([item.id],draft=>{for(const token of draft){token.metadata={...token.metadata,[NS]:{...(token.metadata?.[NS]||{}),bleedMarkerId:marker.id}};}});
    await OBR.scene.items.addItems([marker]);
