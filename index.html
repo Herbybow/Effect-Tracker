@@ -24,21 +24,41 @@
 
     <div id="bleed-controls" class="bleed-controls">
       <div class="effect-columns">
-        <div class="effect-column">
+        <div class="effect-column effect-bleed">
           <img class="drop" src="./effects/Bleed.svg" alt="Bleed" />
-          <div class="tiers" id="tiers">
-        <button data-tier="1">3x1</button>
-        <button data-tier="2">3x2</button>
-        <button data-tier="3">3x3</button>
-        <button data-tier="4">3x4</button>
-        <button data-tier="5">3x5</button>
+          <div class="tiers">
+            <button data-effect="bleed" data-tier="1">3×1</button>
+            <button data-effect="bleed" data-tier="2">3×2</button>
+            <button data-effect="bleed" data-tier="3">3×3</button>
+            <button data-effect="bleed" data-tier="4">3×4</button>
+            <button data-effect="bleed" data-tier="5">3×5</button>
+          </div>
+        </div>
+        <div class="effect-column effect-poison">
+          <img class="drop" src="./effects/Poison.svg" alt="Poison" />
+          <div class="tiers">
+            <button data-effect="poison" data-tier="1">3×1</button>
+            <button data-effect="poison" data-tier="2">3×2</button>
+            <button data-effect="poison" data-tier="3">3×3</button>
+            <button data-effect="poison" data-tier="4">3×4</button>
+            <button data-effect="poison" data-tier="5">3×5</button>
+          </div>
+        </div>
+        <div class="effect-column effect-fire">
+          <img class="drop" src="./effects/Fire.svg" alt="Fire" />
+          <div class="tiers">
+            <button data-effect="fire" data-tier="1">3×1</button>
+            <button data-effect="fire" data-tier="2">3×2</button>
+            <button data-effect="fire" data-tier="3">3×3</button>
+            <button data-effect="fire" data-tier="4">3×4</button>
+            <button data-effect="fire" data-tier="5">3×5</button>
           </div>
         </div>
       </div>
     </div>
 
     <section class="panel clear-panel">
-      <button id="clear-bleed" class="secondary" type="button">Clear</button>
+      <button id="clear-effects" class="secondary" type="button">Clear</button>
     </section>
 
     <div id="toast" role="status" aria-live="polite"></div>
