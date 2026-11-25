@@ -6,6 +6,7 @@ const VALUE_EFFECTS={stunt:{label:"Stunt",icon:"Stunt.svg",color:"stunt"},root:{
 let characters=[], activeId=null, selectedId=null, busy=false, queued=false, personalData={};
 const $=id=>document.getElementById(id);
 const isCharacter=item=>item?.layer==="CHARACTER"&&item?.type==="IMAGE";
+function errorText(error){if(error?.message)return error.message;if(typeof error==="string")return error;try{return JSON.stringify(error);}catch{return String(error);}}
 function notify(message){const t=$("toast");if(!t)return;t.textContent=message;t.classList.add("show");window.setTimeout(()=>t.classList.remove("show"),2800);}
 function effectsOf(item){
  const effects=item?.metadata?.[NS]?.effects||{};
@@ -73,12 +74,15 @@ async function ensureEffectSlots(character){
  const labels=["Bleed, Poison, Fire, Regen","Stunt, Root, Blind, Silent","Gel, Mark, Horror, Shield","Future effects"];
  const byIndex=new Map(existing.map(item=>[item.metadata[NS].effectTrackerSlot.index,item]));
  const positionFor=index=>({x:left+width/2,y:centerY-totalHeight/2+height/2+index*(height+gap)});
- if(existing.length){
-  await OBR.scene.items.updateItems(existing.map(item=>item.id),items=>items.map(item=>{
-   const index=item.metadata?.[NS]?.effectTrackerSlot?.index;
-   return {...item,width,height,position:positionFor(index)};
-  }));
- }
+ const slotsNeedingUpdate=existing.filter(item=>{
+  const index=item.metadata?.[NS]?.effectTrackerSlot?.index,p=positionFor(index);
+  return Math.abs((item.width||0)-width)>0.01||Math.abs((item.height||0)-height)>0.01||
+   Math.abs((item.position?.x??0)-p.x)>0.01||Math.abs((item.position?.y??0)-p.y)>0.01;
+ });
+ if(slotsNeedingUpdate.length)await OBR.scene.items.updateItems(slotsNeedingUpdate.map(item=>item.id),items=>items.map(item=>{
+  const index=item.metadata?.[NS]?.effectTrackerSlot?.index;
+  return {...item,width,height,position:positionFor(index)};
+ }));
  const shapes=[];
  for(let index=0;index<4;index++){
   if(byIndex.has(index))continue;
@@ -101,60 +105,44 @@ async function ensureEffectSlots(character){
  const existingByType=new Map(existingMarkers.map(item=>[item.metadata[NS].effectTrackerPng.type,item]));
  const staleIds=[...oldMarkers,...oldSvgMarkers,...existingMarkers.filter(item=>!activeTypes.has(item.metadata[NS].effectTrackerPng.type))].map(item=>item.id);
  if(staleIds.length)await OBR.scene.items.deleteItems(staleIds);
- const geometryFor=type=>{
-  const row=rowTypes.findIndex(types=>types.includes(type));
-  if(row<0)return null;
-  const index=rowTypes[row].indexOf(type);
-  const iconSize=Math.max(0.1,Math.min(height*0.25,width/4*0.25));
-  return {row,index,iconSize,position:{x:left+width*(index+0.5)/4,y:positionFor(row).y}};
- };
- const icons=[];
- const iconTypes=[...activeTypes].filter(type=>geometryFor(type));
- const replaceIds=existingMarkers.map(item=>item.id);
- if(replaceIds.length)await OBR.scene.items.deleteItems(replaceIds);
- for(const type of iconTypes){
-  const geometry=geometryFor(type);
-  const iconName=(EFFECT_TYPES[type]?.icon||VALUE_EFFECTS[type]?.icon)?.replace(/\.svg$/i,".png");
-  if(!iconName)continue;
-  const icon=buildImage(
-    {width:256,height:256,mime:"image/png",url:`https://raw.githubusercontent.com/Herbybow/Effect-Tracker/main/public/PNG/${iconName}`},
-    {offset:{x:0,y:0},dpi:256}
-   )
-   .scale({x:geometry.iconSize,y:geometry.iconSize})
-   .position(geometry.position)
-   .layer("ATTACHMENT")
-   .attachedTo(character.id)
-   .disableHit(true)
-   .locked(true)
-   .metadata({[NS]:{effectTrackerPng:{characterId:character.id,type,row:geometry.row}}})
-   .build();
+ const geometryFor=type=>{const row=rowTypes.findIndex(types=>types.includes(type));if(row<0)return null;const index=rowTypes[row].indexOf(type);const iconSize=Math.max(0.1,Math.min(height*0.25,width/4*0.25));return {row,index,iconSize,position:{x:left+width*(index+0.5)/4,y:positionFor(row).y}};};
+ const icons=[],updates=[];
+ for(const type of activeTypes){
+  const geometry=geometryFor(type);if(!geometry)continue;
+  const old=existingByType.get(type);
+  if(old){const p=old.position||{},sc=old.scale||{};if(Math.abs((p.x??0)-geometry.position.x)>0.01||Math.abs((p.y??0)-geometry.position.y)>0.01||Math.abs((sc.x??0)-geometry.iconSize)>0.01||Math.abs((sc.y??0)-geometry.iconSize)>0.01)updates.push({id:old.id,geometry});continue;}
+  const iconName=(EFFECT_TYPES[type]?.icon||VALUE_EFFECTS[type]?.icon)?.replace(/\.svg$/i,".png");if(!iconName)continue;
+  const icon=buildImage({width:256,height:256,mime:"image/png",url:"https://raw.githubusercontent.com/Herbybow/Effect-Tracker/main/public/PNG/"+iconName},{offset:{x:0,y:0},dpi:256})
+   .scale({x:geometry.iconSize,y:geometry.iconSize}).position(geometry.position).layer("ATTACHMENT").attachedTo(character.id).disableHit(true).locked(true)
+   .metadata({[NS]:{effectTrackerPng:{characterId:character.id,type,row:geometry.row}}}).build();
   icons.push(icon);
  }
+ if(updates.length)await OBR.scene.items.updateItems(updates.map(x=>x.id),items=>items.map(item=>{const u=updates.find(x=>x.id===item.id);return u?{...item,position:u.geometry.position,scale:{x:u.geometry.iconSize,y:u.geometry.iconSize}}:item;}));
  if(icons.length)await OBR.scene.items.addItems(icons);
 }
-async function refresh(){if(busy){queued=true;return;}busy=true;try{characters=await OBR.scene.items.getItems(isCharacter);const meta=await OBR.player.getMetadata();personalData=meta?.[NS]||{};await migratePersonalEffects();const preferred=personalData.activeCharacterId;activeId=characters.some(i=>i.id===preferred)?preferred:null;if(activeId){const assigned=characters.find(i=>i.id===activeId);if(assigned)await ensureEffectSlots(assigned);}if(!selectedId||!characters.some(i=>i.id===selectedId))selectedId=((await OBR.player.getSelection())||[]).find(id=>characters.some(i=>i.id===id))||null;render();}catch(e){console.error(e);notify(`Could not load characters: ${e?.message||e}`);}finally{busy=false;if(queued){queued=false;void refresh();}}}
+async function refresh(){if(busy){queued=true;return;}busy=true;try{characters=await OBR.scene.items.getItems(isCharacter);const meta=await OBR.player.getMetadata();personalData=meta?.[NS]||{};await migratePersonalEffects();const preferred=personalData.activeCharacterId;activeId=characters.some(i=>i.id===preferred)?preferred:null;if(activeId){const assigned=characters.find(i=>i.id===activeId);if(assigned)await ensureEffectSlots(assigned);}if(!selectedId||!characters.some(i=>i.id===selectedId))selectedId=((await OBR.player.getSelection())||[]).find(id=>characters.some(i=>i.id===id))||null;render();}catch(e){console.error(e);notify(`Could not load characters: ${errorText(e)}`);}finally{busy=false;if(queued){queued=false;void refresh();}}}
 async function update(id,mutate){await OBR.scene.items.updateItems([id],items=>{for(const item of items){const d=JSON.parse(JSON.stringify(item.metadata?.[NS]||{}));d.effects??={};mutate(d);item.metadata={...item.metadata,[NS]:d};}});}
 async function setActive(id){const meta=await OBR.player.getMetadata(),data=JSON.parse(JSON.stringify(meta?.[NS]||{}));data.activeCharacterId=id;delete data.effectsByCharacter;await OBR.player.setMetadata({[NS]:data});personalData=data;activeId=id;selectedId=id;const assigned=characters.find(i=>i.id===id);if(assigned)await ensureEffectSlots(assigned);render();}
 async function addToInitiative(id){
  const item=characters.find(c=>c.id===id);if(!item){notify("Select a character token on the map first.");return;}
  try{await OBR.scene.items.updateItems([id],items=>{for(const sceneItem of items){if(sceneItem.metadata?.[INIT_NS]===undefined){sceneItem.metadata={...sceneItem.metadata,[INIT_NS]:{count:"0",active:false}};}}});notify(`${item.name||"Character"} added to Initiative.`);await refresh();}
- catch(e){console.error(e);notify(`Could not add to Initiative: ${e?.message||e}`);}
+ catch(e){console.error(e);notify(`Could not add to Initiative: ${errorText(e)}`);}
 }
-async function clearEffects(){const item=active();if(!item){notify("Assign a character first.");return;}try{let changed=false;await update(item.id,d=>{d.effects??={};for(const type of ["bleed","poison","fire","regen","horror"]){const raw=d.effects[type],list=Array.isArray(raw)?raw:(raw&&typeof raw==="object"?[raw]:[]);const remaining=list.map(b=>{const charges=Math.max(0,Number(b.charges)||0);if(charges>0)changed=true;return {...b,charges:Math.max(0,charges-1)};}).filter(b=>b.charges>0);if(remaining.length)d.effects[type]=remaining;else delete d.effects[type];}});if(!changed){notify("No active effect charges to clear.");return;}notify("Consumed one charge from each active effect. No damage was dealt.");await refresh();}catch(e){console.error(e);notify(`Could not clear effects: ${e?.message||e}`);}}
-async function setValueEffect(type,value){const item=active(),config=VALUE_EFFECTS[type];if(!item||!config)return;try{await update(item.id,d=>{d.effects[type]=value;});notify(value===0?`${config.label} cleared.`:`${config.label} set to ${value}.`);document.querySelectorAll(`.value-effect-column[data-effect="${type}"] button`).forEach(button=>button.classList.toggle("active",Number(button.dataset.value)===value&&value!==0));await refresh();}catch(e){console.error(e);notify(`Could not update ${config.label}: ${e?.message||e}`);}}
-async function hitEffects(){const item=active();if(!item){notify("Assign a character first.");return;}try{let changed=false;await update(item.id,d=>{d.effects??={};for(const type of ["stunt","gel"]){const value=Math.max(0,Number(d.effects[type])||0);if(value>0){d.effects[type]=Math.max(0,value-1);changed=true;}}for(const type of ["mark","shield"]){const raw=d.effects[type],list=Array.isArray(raw)?raw:(raw&&typeof raw==="object"?[raw]:[]);const remaining=list.map(b=>{const charges=Math.max(0,Number(b.charges)||0);if(charges>0)changed=true;return {...b,charges:Math.max(0,charges-1)};}).filter(b=>b.charges>0);if(remaining.length)d.effects[type]=remaining;else delete d.effects[type];}});if(!changed){notify("No Stunt, Gel, Mark or Shield to reduce.");return;}notify("Hit applied: Stunt/Gel power and Mark/Shield charges reduced by 1.");await refresh();}catch(e){console.error(e);notify(`Could not apply Hit: ${e?.message||e}`);}}
-async function applyEffect(type,power){const item=active(),config=EFFECT_TYPES[type];if(!item||!config){notify("Assign a character first.");return;}try{await update(item.id,d=>{const v=d.effects[type],list=Array.isArray(v)?v:(v&&typeof v==="object"?[v]:[]);list.push({id:crypto.randomUUID(),power,charges:3,appliedAt:new Date().toISOString(),schemaVersion:2});d.effects[type]=list.filter(b=>b.charges>0);});notify(`Added a separate 3×${power} ${config.label} to ${item.name||"the character"}.`);await refresh();}catch(e){console.error(e);notify(`Could not apply ${config.label}: ${e?.message||e}`);}}
+async function clearEffects(){const item=active();if(!item){notify("Assign a character first.");return;}try{let changed=false;await update(item.id,d=>{d.effects??={};for(const type of ["bleed","poison","fire","regen","horror"]){const raw=d.effects[type],list=Array.isArray(raw)?raw:(raw&&typeof raw==="object"?[raw]:[]);const remaining=list.map(b=>{const charges=Math.max(0,Number(b.charges)||0);if(charges>0)changed=true;return {...b,charges:Math.max(0,charges-1)};}).filter(b=>b.charges>0);if(remaining.length)d.effects[type]=remaining;else delete d.effects[type];}});if(!changed){notify("No active effect charges to clear.");return;}notify("Consumed one charge from each active effect. No damage was dealt.");await refresh();}catch(e){console.error(e);notify(`Could not clear effects: ${errorText(e)}`);}}
+async function setValueEffect(type,value){const item=active(),config=VALUE_EFFECTS[type];if(!item||!config)return;try{await update(item.id,d=>{d.effects[type]=value;});notify(value===0?`${config.label} cleared.`:`${config.label} set to ${value}.`);document.querySelectorAll(`.value-effect-column[data-effect="${type}"] button`).forEach(button=>button.classList.toggle("active",Number(button.dataset.value)===value&&value!==0));await refresh();}catch(e){console.error(e);notify(`Could not update ${config.label}: ${errorText(e)}`);}}
+async function hitEffects(){const item=active();if(!item){notify("Assign a character first.");return;}try{let changed=false;await update(item.id,d=>{d.effects??={};for(const type of ["stunt","gel"]){const value=Math.max(0,Number(d.effects[type])||0);if(value>0){d.effects[type]=Math.max(0,value-1);changed=true;}}for(const type of ["mark","shield"]){const raw=d.effects[type],list=Array.isArray(raw)?raw:(raw&&typeof raw==="object"?[raw]:[]);const remaining=list.map(b=>{const charges=Math.max(0,Number(b.charges)||0);if(charges>0)changed=true;return {...b,charges:Math.max(0,charges-1)};}).filter(b=>b.charges>0);if(remaining.length)d.effects[type]=remaining;else delete d.effects[type];}});if(!changed){notify("No Stunt, Gel, Mark or Shield to reduce.");return;}notify("Hit applied: Stunt/Gel power and Mark/Shield charges reduced by 1.");await refresh();}catch(e){console.error(e);notify(`Could not apply Hit: ${errorText(e)}`);}}
+async function applyEffect(type,power){const item=active(),config=EFFECT_TYPES[type];if(!item||!config){notify("Assign a character first.");return;}try{await update(item.id,d=>{const v=d.effects[type],list=Array.isArray(v)?v:(v&&typeof v==="object"?[v]:[]);list.push({id:crypto.randomUUID(),power,charges:3,appliedAt:new Date().toISOString(),schemaVersion:2});d.effects[type]=list.filter(b=>b.charges>0);});notify(`Added a separate 3×${power} ${config.label} to ${item.name||"the character"}.`);await refresh();}catch(e){console.error(e);notify(`Could not apply ${config.label}: ${errorText(e)}`);}}
 OBR.onReady(()=>{void(async()=>{try{
  await OBR.action.setHeight(1300);await OBR.action.setWidth(325);
  document.querySelectorAll(".effect-column button[data-tier]").forEach(b=>b.addEventListener("click",()=>applyEffect(b.dataset.effect,Number(b.dataset.tier))));
  document.querySelectorAll(".value-effect-column button[data-value]").forEach(b=>b.addEventListener("click",()=>setValueEffect(b.dataset.effect,Number(b.dataset.value))));
-$("assign-character").addEventListener("click",async()=>{const candidate=characters.find(c=>c.id===selectedId);if(!candidate){notify("Select a character token on the map first.");return;}try{await setActive(candidate.id);notify(`${candidate.name||"Character"} is now assigned to your Effect Tracker.`);}catch(e){console.error(e);notify(`Could not assign character: ${e?.message||e}`);}});
+$("assign-character").addEventListener("click",async()=>{const candidate=characters.find(c=>c.id===selectedId);if(!candidate){notify("Select a character token on the map first.");return;}try{await setActive(candidate.id);notify(`${candidate.name||"Character"} is now assigned to your Effect Tracker.`);}catch(e){console.error(e);notify(`Could not assign character: ${errorText(e)}`);}});
  $("add-to-initiative").addEventListener("click",()=>{const candidate=characters.find(c=>c.id===selectedId);if(candidate)void addToInitiative(candidate.id);});
  $("clear-effects").addEventListener("click",()=>void clearEffects());
  $("hit-effects").addEventListener("click",()=>void hitEffects());
  OBR.scene.items.onChange(()=>{void refresh();});
  OBR.player.onChange(player=>{const picked=(player?.selection||[]).find(id=>characters.some(c=>c.id===id));if(picked){selectedId=picked;render();}});
  OBR.scene.onReadyChange(ready=>{if(ready)void refresh();});await refresh();
- }catch(e){console.error(e);notify(`Startup error: ${e?.message||e}`);} })();});
+ }catch(e){console.error(e);notify(`Startup error: ${errorText(e)}`);} })();});
 window.addEventListener("error",e=>{console.error("Effect Tracker script error:",e.message);});
 window.addEventListener("unhandledrejection",e=>{console.error("Effect Tracker connection error:",e.reason);});
