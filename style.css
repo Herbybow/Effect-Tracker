@@ -83,3 +83,17 @@
 .value-effect-tag{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:58px;min-height:38px;border-radius:7px;padding:5px 8px;font-size:11px;border:1px solid #555;background:#302b35;box-sizing:border-box}
 .value-effect-tag img{width:15px;height:15px;object-fit:contain;flex:0 0 auto}
 .value-stunt{color:#FFCC00;border-color:#b38d00}.value-root{color:#d97745;border-color:#993300}.value-blind{color:#fff;border-color:#888}.value-silent{color:#FF33FF;border-color:#b52daf}
+
+/* Row 3: Gel plus the Mark, Horror and Shield charge stacks */
+.third-effect-board{margin-top:14px;padding-top:14px;border-top:1px solid #3b3542}
+.action-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.action-buttons .secondary{margin-top:0}
+.effect-mark .tiers button{background:#402333;border-color:#993366;color:#f2a6ca}
+.effect-horror .tiers button{background:#302044;border-color:#663399;color:#d7b8ff}
+.effect-shield .tiers button{background:#383838;border-color:#999;color:#eee}
+.value-effect-column[data-effect="gel"] .value-buttons button{border-color:#33aaaa;color:#33FFFF}
+.value-effect-column[data-effect="gel"] .value-buttons button.active{background:#164b4b}
+.value-gel{color:#33FFFF;border-color:#33aaaa}
+.effect-tag.effect-mark{background:#402333;color:#f2a6ca;border-color:#993366}
+.effect-tag.effect-horror{background:#302044;color:#d7b8ff;border-color:#663399}
+.effect-tag.effect-shield{background:#383838;color:#eee;border-color:#999}
