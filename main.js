@@ -1,8 +1,8 @@
 import OBR, { buildShape, buildImage } from "@owlbear-rodeo/sdk";
 const NS="com.effect-tracker/data";
 const INIT_NS="rodeo.owlbear.initiative-tracker/metadata";
-const EFFECT_TYPES={bleed:{label:"Bleed",icon:"Bleed.png",color:"blood"},poison:{label:"Poison",icon:"Poison.png",color:"poison"},fire:{label:"Fire",icon:"Fire.png",color:"fire"},regen:{label:"Regen",icon:"Regen.png",color:"regen"},mark:{label:"Mark",icon:"Mark.png",color:"mark"},horror:{label:"Horror",icon:"Horror.png",color:"horror"},shield:{label:"Shield",icon:"Shield.png",color:"shield"}};
-const VALUE_EFFECTS={stunt:{label:"Stunt",icon:"Stunt.png",color:"stunt"},root:{label:"Root",icon:"Root.png",color:"root"},blind:{label:"Blind",icon:"Blind.png",color:"blind"},silent:{label:"Silent",icon:"Silent.png",color:"silent"},gel:{label:"Gel",icon:"Gel.png",color:"gel"}};
+const EFFECT_TYPES={bleed:{label:"Bleed",icon:"Bleed.svg",color:"blood"},poison:{label:"Poison",icon:"Poison.svg",color:"poison"},fire:{label:"Fire",icon:"Fire.svg",color:"fire"},regen:{label:"Regen",icon:"Regen.svg",color:"regen"},mark:{label:"Mark",icon:"Mark.svg",color:"mark"},horror:{label:"Horror",icon:"Horror.svg",color:"horror"},shield:{label:"Shield",icon:"Shield.svg",color:"shield"}};
+const VALUE_EFFECTS={stunt:{label:"Stunt",icon:"Stunt.svg",color:"stunt"},root:{label:"Root",icon:"Root.svg",color:"root"},blind:{label:"Blind",icon:"Blind.svg",color:"blind"},silent:{label:"Silent",icon:"Silent.svg",color:"silent"},gel:{label:"Gel",icon:"Gel.svg",color:"gel"}};
 let characters=[], activeId=null, selectedId=null, busy=false, queued=false, personalData={};
 const $=id=>document.getElementById(id);
 const isCharacter=item=>item?.layer==="CHARACTER"&&item?.type==="IMAGE";
@@ -106,13 +106,14 @@ async function ensureEffectSlots(character){
   for(let index=0;index<rowTypes[row].length;index++){
    const type=rowTypes[row][index];
    if(!activeTypes.has(type)||existingByType.has(type))continue;
-   const iconName=EFFECT_TYPES[type]?.icon||VALUE_EFFECTS[type]?.icon;
+   const iconName=(EFFECT_TYPES[type]?.icon||VALUE_EFFECTS[type]?.icon)?.replace(/\\.svg$/i,".png");
    if(!iconName)continue;
    const iconSize=Math.max(8,Math.min(height*0.82,width/4*0.82));
-   const icon=buildImage()
-    .url(`https://herbybow.github.io/Effect-Tracker/PNG/${iconName}`)
-    .width(iconSize)
-    .height(iconSize)
+   const icon=buildImage(
+     {width:256,height:256,mime:"image/png",url:`https://herbybow.github.io/Effect-Tracker/PNG/${iconName}`},
+     {offset:{x:0,y:0},dpi:256}
+    )
+    .scale({x:iconSize,y:iconSize})
     .position({x:left+width*(index+0.5)/4,y:positionFor(row).y})
     .layer("ATTACHMENT")
     .attachedTo(character.id)
