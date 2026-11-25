@@ -1,4 +1,4 @@
-import OBR, { buildShape } from "@owlbear-rodeo/sdk";
+import OBR, { buildImage, buildShape } from "@owlbear-rodeo/sdk";
 const NS="com.effect-tracker/data";
 const INIT_NS="rodeo.owlbear.initiative-tracker/metadata";
 const EFFECT_TYPES={bleed:{label:"Bleed",icon:"Bleed.svg",color:"blood"},poison:{label:"Poison",icon:"Poison.svg",color:"poison"},fire:{label:"Fire",icon:"Fire.svg",color:"fire"},regen:{label:"Regen",icon:"Regen.svg",color:"regen"},mark:{label:"Mark",icon:"Mark.svg",color:"mark"},horror:{label:"Horror",icon:"Horror.svg",color:"horror"},shield:{label:"Shield",icon:"Shield.svg",color:"shield"}};
@@ -86,6 +86,48 @@ async function ensureEffectSlots(character){
   shapes.push(shape);
  }
  if(shapes.length)await OBR.scene.items.addItems(shapes);
+
+ const rowTypes=[
+  ["bleed","poison","fire","regen"],
+  ["stunt","root","blind","silent"],
+  ["gel","mark","horror","shield"]
+ ];
+ const chargeTypes=new Set(effectsOf(character).map(effect=>effect.type));
+ const values=valueEffectsOf(character);
+ const activeTypes=new Set([...chargeTypes,...values.filter(effect=>effect.value>0).map(effect=>effect.type)]);
+ const existingIcons=await OBR.scene.items.getItems(item=>item.metadata?.[NS]?.effectTrackerIcon?.characterId===character.id);
+ const existingByType=new Map(existingIcons.map(item=>[item.metadata[NS].effectTrackerIcon.type,item]));
+ const wanted=[];
+ const stale=[];
+ for(let row=0;row<rowTypes.length;row++){
+  const types=rowTypes[row].filter(type=>activeTypes.has(type));
+  const rowPosition=positionFor(row);
+  const iconSize=Math.max(8,Math.min(height*0.82,width/4));
+  for(const type of types){
+   const index=rowTypes[row].indexOf(type);
+   const position={x:left+width*(index+0.5)/4,y:rowPosition.y};
+   const filename=type.charAt(0).toUpperCase()+type.slice(1)+".svg";
+   const existingIcon=existingByType.get(type);
+   if(existingIcon){
+    wanted.push(existingIcon);
+   }else{
+    const icon=buildImage(
+     {url:`https://herbybow.github.io/Effect-Tracker/effects/${filename}`,mime:"image/svg+xml",width:128,height:128},
+     {dpi:128,offset:{x:64,y:64}}
+    ).name(`Effect Tracker Icon: ${type}`).width(iconSize).height(iconSize).position(position).layer("ATTACHMENT").attachedTo(character.id).disableHit(true).locked(true).metadata({[NS]:{effectTrackerIcon:{characterId:character.id,type,row}}}).build();
+    wanted.push(icon);
+   }
+   const icon=wanted[wanted.length-1];
+   if(existingIcon){
+    await OBR.scene.items.updateItems([existingIcon.id],items=>items.map(item=>({...item,width:iconSize,height:iconSize,position})));
+   }
+  }
+ }
+ const activeTypeSet=new Set([...rowTypes[0],...rowTypes[1],...rowTypes[2]].filter(type=>activeTypes.has(type)));
+ const removeIds=existingIcons.filter(item=>!activeTypeSet.has(item.metadata[NS].effectTrackerIcon.type)).map(item=>item.id);
+ if(removeIds.length)await OBR.scene.items.deleteItems(removeIds);
+ const addIcons=wanted.filter(item=>!item.id);
+ if(addIcons.length)await OBR.scene.items.addItems(addIcons);
 }
 async function refresh(){if(busy){queued=true;return;}busy=true;try{characters=await OBR.scene.items.getItems(isCharacter);const meta=await OBR.player.getMetadata();personalData=meta?.[NS]||{};await migratePersonalEffects();const preferred=personalData.activeCharacterId;activeId=characters.some(i=>i.id===preferred)?preferred:null;if(activeId){const assigned=characters.find(i=>i.id===activeId);if(assigned)await ensureEffectSlots(assigned);}if(!selectedId||!characters.some(i=>i.id===selectedId))selectedId=((await OBR.player.getSelection())||[]).find(id=>characters.some(i=>i.id===id))||null;render();}catch(e){console.error(e);notify(`Could not load characters: ${e?.message||e}`);}finally{busy=false;if(queued){queued=false;void refresh();}}}
 async function update(id,mutate){await OBR.scene.items.updateItems([id],items=>{for(const item of items){const d=JSON.parse(JSON.stringify(item.metadata?.[NS]||{}));d.effects??={};mutate(d);item.metadata={...item.metadata,[NS]:d};}});}
