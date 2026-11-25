@@ -106,7 +106,7 @@ async function ensureEffectSlots(character){
   for(let index=0;index<rowTypes[row].length;index++){
    const type=rowTypes[row][index];
    if(!activeTypes.has(type)||existingByType.has(type))continue;
-   const iconName=(EFFECT_TYPES[type]?.icon||VALUE_EFFECTS[type]?.icon)?.replace(/\\.svg$/i,".png");
+   const iconName=(EFFECT_TYPES[type]?.icon||VALUE_EFFECTS[type]?.icon)?.replace(/\.svg$/i,".png");
    if(!iconName)continue;
    const iconSize=Math.max(8,Math.min(height*0.82,width/4*0.82));
    const icon=buildImage(
