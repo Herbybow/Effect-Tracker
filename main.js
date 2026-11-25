@@ -105,13 +105,6 @@ async function ensureEffectSlots(character){
   const row=rowTypes.findIndex(types=>types.includes(type));
   if(row<0)return null;
   const index=rowTypes[row].indexOf(type);
-  const iconSize=Math.max(0.1,Math.min(height*0.72,width/4*0.72));
-  return {row,index,iconSize,position:{x:left+width*(index+0.5)/4,y:positionFor(row).y}};
- };
- const geometryFor=type=>{
-  const row=rowTypes.findIndex(types=>types.includes(type));
-  if(row<0)return null;
-  const index=rowTypes[row].indexOf(type);
   const iconSize=Math.max(0.1,Math.min(height*0.25,width/4*0.25));
   return {row,index,iconSize,position:{x:left+width*(index+0.5)/4,y:positionFor(row).y}};
  };
@@ -121,7 +114,7 @@ async function ensureEffectSlots(character){
  if(replaceIds.length)await OBR.scene.items.deleteItems(replaceIds);
  for(const type of iconTypes){
   const geometry=geometryFor(type);
-  const iconName=(EFFECT_TYPES[type]?.icon||VALUE_EFFECTS[type]?.icon)?.replace(/\\.svg$/i,".png");
+  const iconName=(EFFECT_TYPES[type]?.icon||VALUE_EFFECTS[type]?.icon)?.replace(/\.svg$/i,".png");
   if(!iconName)continue;
   const icon=buildImage(
     {width:256,height:256,mime:"image/png",url:`https://raw.githubusercontent.com/Herbybow/Effect-Tracker/main/public/PNG/${iconName}`},
