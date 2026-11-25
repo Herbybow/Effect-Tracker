@@ -68,7 +68,7 @@ async function ensureEffectSlots(character){
  const bounds=await OBR.scene.items.getItemBounds([character.id]);
  const existing=await OBR.scene.items.getItems(item=>item.metadata?.[NS]?.effectTrackerSlot?.characterId===character.id);
  const width=bounds.width,height=Math.max(10,bounds.height*0.14),gap=0,outerGap=0;
- const totalHeight=height*4+gap*3,left=bounds.center.x-width/2,centerY=bounds.min.y-outerGap-totalHeight/2;
+ const totalHeight=height*4+gap*3,left=bounds.center.x,centerY=bounds.min.y-outerGap-totalHeight/2;
  const colors=["#e36b86","#ffcc00","#33ffff","#999999"];
  const labels=["Bleed, Poison, Fire, Regen","Stunt, Root, Blind, Silent","Gel, Mark, Horror, Shield","Future effects"];
  const byIndex=new Map(existing.map(item=>[item.metadata[NS].effectTrackerSlot.index,item]));
