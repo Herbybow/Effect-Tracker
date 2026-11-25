@@ -88,12 +88,14 @@
 .third-effect-board{margin-top:14px;padding-top:14px;border-top:1px solid #3b3542}
 .action-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .action-buttons .secondary{margin-top:0}
-.effect-mark .tiers button{background:#402333;border-color:#993366;color:#f2a6ca}
+.effect-mark .tiers button{background:#4b2940;border-color:#c45b91;color:#ffd0e5}
 .effect-horror .tiers button{background:#302044;border-color:#663399;color:#d7b8ff}
 .effect-shield .tiers button{background:#383838;border-color:#999;color:#eee}
 .value-effect-column[data-effect="gel"] .value-buttons button{border-color:#33aaaa;color:#33FFFF}
 .value-effect-column[data-effect="gel"] .value-buttons button.active{background:#164b4b}
 .value-gel{color:#33FFFF;border-color:#33aaaa}
-.effect-tag.effect-mark{background:#402333;color:#f2a6ca;border-color:#993366}
+.effect-tag.effect-mark{background:#402333;color:#ffd0e5;border-color:#c45b91}
 .effect-tag.effect-horror{background:#302044;color:#d7b8ff;border-color:#663399}
 .effect-tag.effect-shield{background:#383838;color:#eee;border-color:#999}
+
+.value-effect-column[data-effect="gel"] .value-buttons button.active{outline-color:#33FFFF}
