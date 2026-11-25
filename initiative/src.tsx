@@ -17,8 +17,8 @@ import "./style.css";
 
 const INIT="rodeo.owlbear.initiative-tracker/metadata";
 const EFFECTS_NS="com.effect-tracker/data";
-type EffectType="bleed"|"poison"|"fire";
-const EFFECT_DEFS:{type:EffectType;icon:string;label:string}[]=[{type:"bleed",icon:"Bleed.svg",label:"Bleed"},{type:"poison",icon:"Poison.svg",label:"Poison"},{type:"fire",icon:"Fire.svg",label:"Fire"}];
+type EffectType="bleed"|"poison"|"fire"|"regen";
+const EFFECT_DEFS:{type:EffectType;icon:string;label:string}[]=[{type:"bleed",icon:"Bleed.svg",label:"Bleed"},{type:"poison",icon:"Poison.svg",label:"Poison"},{type:"fire",icon:"Fire.svg",label:"Fire"},{type:"regen",icon:"Regen.svg",label:"Regen"}];
 type Entry={id:string;count:string;name:string;active:boolean;visible:boolean;activeEffects:EffectType[];turnDamageByEffect?:Partial<Record<EffectType,number>>;turnDamage?:number};
 const valid=(v:any)=>v&&typeof v==="object"&&typeof v.count==="string"&&typeof v.active==="boolean";
 
@@ -53,15 +53,17 @@ function Tracker(){
     if(item.id!==next.id)continue;
     const data=item.metadata[EFFECTS_NS], effects={...(data?.effects||{})};
     const damageByEffect:Partial<Record<EffectType,number>>={};
+    const healingByEffect:Partial<Record<EffectType,number>>={};
     for(const effect of EFFECT_DEFS){
      const raw=effects[effect.type],list=Array.isArray(raw)?raw:(raw&&typeof raw==="object"?[raw]:[]);
      let damage=0;
      const remaining=list.map((b:any)=>{const charges=Math.max(0,Number(b.charges)||0),power=Math.max(0,Number(b.power)||Number(b.damage)||0);if(charges>0)damage+=power;return {...b,charges:Math.max(0,charges-1)};}).filter((b:any)=>b.charges>0);
      if(remaining.length)effects[effect.type]=remaining;else delete effects[effect.type];
-     if(damage>0)damageByEffect[effect.type]=damage;
+     if(damage>0){if(effect.type==="regen")healingByEffect[effect.type]=damage;else damageByEffect[effect.type]=damage;}
     }
     if(data?.effects)item.metadata[EFFECTS_NS]={...data,effects};
-    if(Object.keys(damageByEffect).length){initiative.turnDamageByEffect=damageByEffect;initiative.turnDamage=Object.values(damageByEffect).reduce((sum,n)=>sum+(n||0),0);}else{delete initiative.turnDamageByEffect;delete initiative.turnDamage;}
+    const turnEffects={...damageByEffect,...healingByEffect};
+    if(Object.keys(turnEffects).length){initiative.turnDamageByEffect=turnEffects;initiative.turnDamage=Object.values(damageByEffect).reduce((sum,n)=>sum+(n||0),0);}else{delete initiative.turnDamageByEffect;delete initiative.turnDamage;}
    }
   });
  }
@@ -72,7 +74,7 @@ function Tracker(){
   {!items.length&&<Typography variant="caption" sx={{px:2,py:1,color:"text.secondary"}}>Select a character to start initiative</Typography>}
   <Box sx={{overflowY:"auto"}}><List>{items.sort((a,b)=>parseFloat(b.count)-parseFloat(a.count)).map(item=>item.visible||role==="GM"?<ListItem key={item.id} divider selected={item.active} sx={{pr:"64px"}} secondaryAction={<Input disableUnderline sx={{width:48}} inputProps={{sx:{textAlign:"right"}}} value={item.count} onChange={e=>changeCount(item.id,e.target.value)}/>} onDoubleClick={async()=>{await OBR.player.select([item.id]);const bounds=await OBR.scene.items.getItemBounds([item.id]);const center=await OBR.viewport.transformPoint(bounds.center);const w=await OBR.viewport.getWidth(),h=await OBR.viewport.getHeight();const rel=await OBR.viewport.inverseTransformPoint({x:center.x-w/2,y:center.y-h/2});const scale=await OBR.viewport.getScale();await OBR.viewport.animateTo({scale,position:{x:-rel.x*scale,y:-rel.y*scale}});}}>
    {!item.visible&&role==="GM"&&<VisibilityOffRounded fontSize="small" sx={{mr:1,opacity:.5}}/>}
-   <ListItemText disableTypography sx={{width:"100%",minWidth:0}} primary={<Box sx={{display:"flex",alignItems:"center",width:"100%",minWidth:0,gap:1}}><Box sx={{display:"flex",alignItems:"center",gap:1,minWidth:0,flex:1}}><span>{item.name}</span>{EFFECT_DEFS.filter(e=>item.activeEffects.includes(e.type)||!!item.turnDamageByEffect?.[e.type]).map(e=><Box key={e.type} sx={{display:"inline-flex",alignItems:"center",gap:"2px",flexShrink:0}}><img className={`initiative-effect-icon initiative-${e.type}`} src={`https://herbybow.github.io/Effect-Tracker/effects/${e.icon}`} alt={e.label}/>{!!item.turnDamageByEffect?.[e.type]&&<Typography component="span" className={`initiative-damage initiative-${e.type}`}>−{item.turnDamageByEffect[e.type]}</Typography>}</Box>)}</Box>{!item.turnDamageByEffect&&!!item.turnDamage&&<Typography component="span" sx={{color:"#ff3030 !important",fontWeight:"800 !important",marginLeft:"auto",textAlign:"right",minWidth:34,flexShrink:0}}>−{item.turnDamage}</Typography>}</Box>}/>
+   <ListItemText disableTypography sx={{width:"100%",minWidth:0}} primary={<Box sx={{display:"flex",alignItems:"center",width:"100%",minWidth:0,gap:1}}><Box sx={{display:"flex",alignItems:"center",gap:1,minWidth:0,flex:1}}><span>{item.name}</span>{EFFECT_DEFS.filter(e=>item.activeEffects.includes(e.type)||!!item.turnDamageByEffect?.[e.type]).map(e=><Box key={e.type} sx={{display:"inline-flex",alignItems:"center",gap:"2px",flexShrink:0}}><img className={`initiative-effect-icon initiative-${e.type}`} src={`https://herbybow.github.io/Effect-Tracker/effects/${e.icon}`} alt={e.label}/>{!!item.turnDamageByEffect?.[e.type]&&<Typography component="span" className={`initiative-damage initiative-${e.type}`}>{e.type==="regen"?"+":"−"}{item.turnDamageByEffect[e.type]}</Typography>}</Box>)}</Box>{!item.turnDamageByEffect&&!!item.turnDamage&&<Typography component="span" sx={{color:"#ff3030 !important",fontWeight:"800 !important",marginLeft:"auto",textAlign:"right",minWidth:34,flexShrink:0}}>−{item.turnDamage}</Typography>}</Box>}/>
   </ListItem>:null)}</List></Box>
  </Stack>;
 }
