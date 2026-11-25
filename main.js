@@ -105,7 +105,7 @@ async function ensureEffectSlots(character){
  const existingByType=new Map(existingMarkers.map(item=>[item.metadata[NS].effectTrackerPng.type,item]));
  const staleIds=[...oldMarkers,...oldSvgMarkers,...existingMarkers.filter(item=>!activeTypes.has(item.metadata[NS].effectTrackerPng.type))].map(item=>item.id);
  if(staleIds.length)await OBR.scene.items.deleteItems(staleIds);
- const geometryFor=type=>{const row=rowTypes.findIndex(types=>types.includes(type));if(row<0)return null;const index=rowTypes[row].indexOf(type);const iconSize=Math.max(0.1,Math.min(height*0.25,width/4*0.25));return {row,index,iconSize,position:{x:left+width*(index+0.5)/4,y:positionFor(row).y}};};
+ const geometryFor=type=>{const row=rowTypes.findIndex(types=>types.includes(type));if(row<0)return null;const index=rowTypes[row].indexOf(type);const iconSize=Math.max(0.001,Math.min(height*0.02,width/4*0.02));return {row,index,iconSize,position:{x:left+width*(index+0.5)/4,y:positionFor(row).y}};};
  const icons=[],updates=[];
  for(const type of activeTypes){
   const geometry=geometryFor(type);if(!geometry)continue;
