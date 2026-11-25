@@ -45,3 +45,16 @@
 .initiative-button{background:#393340;border-color:#625568;color:#f0e8f2}
 .clear-panel{margin-top:12px}
 .clear-panel .secondary{margin-top:0}
+
+/* Independent effect palettes */
+.effect-tag.effect-bleed{background:#512531;color:#ffd8df;border-color:#874052}
+.effect-tag.effect-poison{background:#203d2b;color:#d6ffdf;border-color:#3f8752}
+.effect-tag.effect-fire{background:#4a2b19;color:#ffe0c2;border-color:#a85c2b}
+.effect-bleed .tiers button{background:#302b35;border-color:#874052}
+.effect-poison .tiers button{background:#203d2b;border-color:#3f8752;color:#e0ffe6}
+.effect-fire .tiers button{background:#4a2b19;border-color:#a85c2b;color:#ffe8d4}
+.effect-bleed .tiers button:hover{border-color:#e36b86;background:#512531}
+.effect-poison .tiers button:hover{border-color:#78d58d;background:#2b5639}
+.effect-fire .tiers button:hover{border-color:#ffad70;background:#63391f}
+.current-effect-icon{width:15px;height:15px;object-fit:contain;display:block;flex:0 0 auto}
+.effect-column .drop{width:38px;height:38px}
