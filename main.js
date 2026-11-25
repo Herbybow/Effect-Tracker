@@ -96,14 +96,15 @@ async function ensureEffectSlots(character){
  const values=valueEffectsOf(character);
  const activeTypes=new Set([...chargeTypes,...values.filter(effect=>effect.value>0).map(effect=>effect.type)]);
  const oldMarkers=await OBR.scene.items.getItems(item=>item.metadata?.[NS]?.effectTrackerIcon?.characterId===character.id);
- const existingMarkers=await OBR.scene.items.getItems(item=>item.metadata?.[NS]?.effectTrackerMarker?.characterId===character.id);
- const removeIds=[...oldMarkers,...existingMarkers].map(item=>item.id);
- if(removeIds.length)await OBR.scene.items.deleteItems(removeIds);
+ const existingMarkers=await OBR.scene.items.getItems(item=>item.metadata?.[NS]?.effectTrackerSvg?.characterId===character.id);
+ const existingByType=new Map(existingMarkers.map(item=>[item.metadata[NS].effectTrackerSvg.type,item]));
+ const staleIds=[...oldMarkers,...existingMarkers.filter(item=>!activeTypes.has(item.metadata[NS].effectTrackerSvg.type))].map(item=>item.id);
+ if(staleIds.length)await OBR.scene.items.deleteItems(staleIds);
  const icons=[];
  for(let row=0;row<rowTypes.length;row++){
   for(let index=0;index<rowTypes[row].length;index++){
    const type=rowTypes[row][index];
-   if(!activeTypes.has(type))continue;
+   if(!activeTypes.has(type)||existingByType.has(type))continue;
    const iconName=EFFECT_TYPES[type]?.icon||VALUE_EFFECTS[type]?.icon;
    if(!iconName)continue;
    const iconSize=Math.max(8,Math.min(height*0.82,width/4*0.82));
@@ -116,7 +117,7 @@ async function ensureEffectSlots(character){
     .attachedTo(character.id)
     .disableHit(true)
     .locked(true)
-    .metadata({[NS]:{effectTrackerIcon:{characterId:character.id,type,row}}})
+    .metadata({[NS]:{effectTrackerSvg:{characterId:character.id,type,row}}})
     .build();
    icons.push(icon);
   }
