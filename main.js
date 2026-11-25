@@ -101,28 +101,39 @@ async function ensureEffectSlots(character){
  const existingByType=new Map(existingMarkers.map(item=>[item.metadata[NS].effectTrackerPng.type,item]));
  const staleIds=[...oldMarkers,...oldSvgMarkers,...existingMarkers.filter(item=>!activeTypes.has(item.metadata[NS].effectTrackerPng.type))].map(item=>item.id);
  if(staleIds.length)await OBR.scene.items.deleteItems(staleIds);
+ const geometryFor=type=>{
+  const row=rowTypes.findIndex(types=>types.includes(type));
+  if(row<0)return null;
+  const index=rowTypes[row].indexOf(type);
+  const iconSize=Math.max(0.1,Math.min(height*0.72,width/4*0.72));
+  return {row,index,iconSize,position:{x:left+width*(index+0.5)/4,y:positionFor(row).y}};
+ };
+ const activeExisting=existingMarkers.filter(item=>activeTypes.has(item.metadata[NS].effectTrackerPng.type));
+ if(activeExisting.length)await OBR.scene.items.updateItems(activeExisting.map(item=>item.id),items=>items.map(item=>{
+  const type=item.metadata?.[NS]?.effectTrackerPng?.type;
+  const geometry=geometryFor(type);
+  return geometry?{...item,position:geometry.position,scale:{x:geometry.iconSize,y:geometry.iconSize}}:item;
+ }));
  const icons=[];
- for(let row=0;row<rowTypes.length;row++){
-  for(let index=0;index<rowTypes[row].length;index++){
-   const type=rowTypes[row][index];
-   if(!activeTypes.has(type)||existingByType.has(type))continue;
-   const iconName=(EFFECT_TYPES[type]?.icon||VALUE_EFFECTS[type]?.icon)?.replace(/\.svg$/i,".png");
-   if(!iconName)continue;
-   const iconSize=Math.max(8,Math.min(height*0.82,width/4*0.82));
-   const icon=buildImage(
-     {width:256,height:256,mime:"image/png",url:`https://herbybow.github.io/Effect-Tracker/PNG/${iconName}`},
-     {offset:{x:0,y:0},dpi:256}
-    )
-    .scale({x:iconSize,y:iconSize})
-    .position({x:left+width*(index+0.5)/4,y:positionFor(row).y})
-    .layer("ATTACHMENT")
-    .attachedTo(character.id)
-    .disableHit(true)
-    .locked(true)
-    .metadata({[NS]:{effectTrackerPng:{characterId:character.id,type,row}}})
-    .build();
-   icons.push(icon);
-  }
+ for(const type of activeTypes){
+  if(existingByType.has(type))continue;
+  const geometry=geometryFor(type);
+  if(!geometry)continue;
+  const iconName=(EFFECT_TYPES[type]?.icon||VALUE_EFFECTS[type]?.icon)?.replace(/\\.svg$/i,".png");
+  if(!iconName)continue;
+  const icon=buildImage(
+    {width:256,height:256,mime:"image/png",url:`https://herbybow.github.io/Effect-Tracker/PNG/${iconName}`},
+    {offset:{x:0,y:0},dpi:256}
+   )
+   .scale({x:geometry.iconSize,y:geometry.iconSize})
+   .position(geometry.position)
+   .layer("ATTACHMENT")
+   .attachedTo(character.id)
+   .disableHit(true)
+   .locked(true)
+   .metadata({[NS]:{effectTrackerPng:{characterId:character.id,type,row:geometry.row}}})
+   .build();
+  icons.push(icon);
  }
  if(icons.length)await OBR.scene.items.addItems(icons);
 }
