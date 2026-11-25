@@ -1,15 +1,17 @@
 import OBR from "@owlbear-rodeo/sdk";
 const NS="com.effect-tracker/data";
 const INIT_NS="rodeo.owlbear.initiative-tracker/metadata";
+const EFFECT_TYPES={bleed:{label:"Bleed",icon:"Bleed.svg",color:"blood"},poison:{label:"Poison",icon:"Poison.svg",color:"poison"},fire:{label:"Fire",icon:"Fire.svg",color:"fire"}};
 let characters=[], activeId=null, selectedId=null, busy=false, queued=false, personalData={};
 const $=id=>document.getElementById(id);
 const isCharacter=item=>item?.layer==="CHARACTER"&&item?.type==="IMAGE";
 function notify(message){const t=$("toast");if(!t)return;t.textContent=message;t.classList.add("show");window.setTimeout(()=>t.classList.remove("show"),2800);}
-function bleedsOf(item){
- const v=item?.metadata?.[NS]?.effects?.bleed;
- if(Array.isArray(v))return v.filter(b=>Number(b.charges)>0);
- if(v&&typeof v==="object")return [{id:v.id||"legacy",power:Number(v.power)||Number(v.damage)||1,charges:Math.max(0,Number(v.charges)||0),appliedAt:v.appliedAt||new Date().toISOString()}].filter(b=>b.charges>0);
- return [];
+function effectsOf(item){
+ const effects=item?.metadata?.[NS]?.effects||{};
+ return Object.entries(EFFECT_TYPES).flatMap(([type,config])=>{
+  const raw=effects[type];const list=Array.isArray(raw)?raw:(raw&&typeof raw==="object"?[raw]:[]);
+  return list.filter(b=>Number(b.charges)>0).map(b=>({id:b.id||"legacy",power:Number(b.power)||Number(b.damage)||1,charges:Math.max(0,Number(b.charges)||0),type,...config}));
+ });
 }
 function active(){return characters.find(x=>x.id===activeId)||null;}
 function viewed(){return characters.find(x=>x.id===selectedId)||active();}
@@ -25,11 +27,10 @@ function render(){
  initiativeButton.hidden=!candidate||alreadyInInitiative;
  initiativeButton.disabled=!candidate||alreadyInInitiative;
  const current=$("current-effects");current.replaceChildren();
- if(!item){current.className="empty";current.textContent="Assign a character to see its current effects.";}
- else {const bs=bleedsOf(item);current.className=bs.length?"current-list":"empty";
-  if(!bs.length)current.textContent="No Effect";
-  else {const tags=document.createElement("div");tags.className="current-effect-tags";for(const b of bs){const tag=document.createElement("span");tag.className="effect-tag";tag.style.minHeight=`${26+(Math.max(1,Number(b.charges)||1)-1)*12}px`;const amount=document.createElement("span");amount.textContent=`${b.charges}×${b.power}`;const icon=document.createElement("img");icon.className="current-bleed-icon";icon.src="./effects/Bleed.svg";icon.alt="";tag.append(amount,icon);tags.append(tag);}current.append(tags);}
- }
+ const activeEffects=item?effectsOf(item):[];current.className=activeEffects.length?"current-list":"empty";
+ if(!item)current.textContent="Assign a character to see its current effects.";
+ else if(!activeEffects.length)current.textContent="No Effect";
+ else {const tags=document.createElement("div");tags.className="current-effect-tags";for(const effect of activeEffects){const tag=document.createElement("span");tag.className=`effect-tag effect-${effect.type}`;tag.style.minHeight=`${26+(Math.max(1,Number(effect.charges)||1)-1)*12}px`;const amount=document.createElement("span");amount.textContent=`${effect.charges}×${effect.power}`;const icon=document.createElement("img");icon.className="current-effect-icon";icon.src=`./effects/${effect.icon}`;icon.alt="";tag.append(amount,icon);tags.append(tag);}current.append(tags);}
  $("bleed-controls").hidden=!full;
 
 }
@@ -52,13 +53,13 @@ async function addToInitiative(id){
  try{await OBR.scene.items.updateItems([id],items=>{for(const sceneItem of items){if(sceneItem.metadata?.[INIT_NS]===undefined){sceneItem.metadata={...sceneItem.metadata,[INIT_NS]:{count:"0",active:false}};}}});notify(`${item.name||"Character"} added to Initiative.`);await refresh();}
  catch(e){console.error(e);notify(`Could not add to Initiative: ${e?.message||e}`);}
 }
-async function clearBleed(){const item=active();if(!item){notify("Assign a character first.");return;}try{let changed=false;await update(item.id,d=>{const raw=d.effects.bleed;const list=Array.isArray(raw)?raw:(raw&&typeof raw==="object"?[raw]:[]);const remaining=list.map(b=>{const charges=Math.max(0,Number(b.charges)||0);if(charges>0)changed=true;return {...b,charges:Math.max(0,charges-1)};}).filter(b=>b.charges>0);if(remaining.length)d.effects.bleed=remaining;else delete d.effects.bleed;});if(!changed){notify("No active Bleed charges to clear.");return;}notify("Consumed one charge from each active Bleed. No damage was dealt.");await refresh();}catch(e){console.error(e);notify(`Could not clear Bleed charges: ${e?.message||e}`);}}
-async function applyBleed(power){const item=active();if(!item){notify("Assign a character first.");return;}try{await update(item.id,d=>{const v=d.effects.bleed,list=Array.isArray(v)?v:(v&&typeof v==="object"?[{id:v.id||"legacy",power:Number(v.power)||Number(v.damage)||1,charges:Math.max(0,Number(v.charges)||0),appliedAt:v.appliedAt||new Date().toISOString()}]:[]);list.push({id:crypto.randomUUID(),power,charges:3,appliedAt:new Date().toISOString(),schemaVersion:2});d.effects.bleed=list.filter(b=>b.charges>0);});notify(`Added a separate 3×${power} Bleed to ${item.name||"the character"}.`);await refresh();}catch(e){console.error(e);notify(`Could not apply Bleed: ${e?.message||e}`);}}
+async function clearEffects(){const item=active();if(!item){notify("Assign a character first.");return;}try{let changed=false;await update(item.id,d=>{d.effects??={};for(const type of Object.keys(EFFECT_TYPES)){const raw=d.effects[type],list=Array.isArray(raw)?raw:(raw&&typeof raw==="object"?[raw]:[]);const remaining=list.map(b=>{const charges=Math.max(0,Number(b.charges)||0);if(charges>0)changed=true;return {...b,charges:Math.max(0,charges-1)};}).filter(b=>b.charges>0);if(remaining.length)d.effects[type]=remaining;else delete d.effects[type];}});if(!changed){notify("No active effect charges to clear.");return;}notify("Consumed one charge from each active effect. No damage was dealt.");await refresh();}catch(e){console.error(e);notify(`Could not clear effects: ${e?.message||e}`);}}
+async function applyEffect(type,power){const item=active(),config=EFFECT_TYPES[type];if(!item||!config){notify("Assign a character first.");return;}try{await update(item.id,d=>{const v=d.effects[type],list=Array.isArray(v)?v:(v&&typeof v==="object"?[v]:[]);list.push({id:crypto.randomUUID(),power,charges:3,appliedAt:new Date().toISOString(),schemaVersion:2});d.effects[type]=list.filter(b=>b.charges>0);});notify(`Added a separate 3×${power} ${config.label} to ${item.name||"the character"}.`);await refresh();}catch(e){console.error(e);notify(`Could not apply ${config.label}: ${e?.message||e}`);}}
 OBR.onReady(()=>{void(async()=>{try{
- document.querySelectorAll("#tiers button[data-tier]").forEach(b=>b.addEventListener("click",()=>applyBleed(Number(b.dataset.tier))));
+ document.querySelectorAll(".effect-column button[data-tier]").forEach(b=>b.addEventListener("click",()=>applyEffect(b.dataset.effect,Number(b.dataset.tier))));
 $("assign-character").addEventListener("click",async()=>{const candidate=characters.find(c=>c.id===selectedId);if(!candidate){notify("Select a character token on the map first.");return;}try{await setActive(candidate.id);notify(`${candidate.name||"Character"} is now assigned to your Effect Tracker.`);}catch(e){console.error(e);notify(`Could not assign character: ${e?.message||e}`);}});
  $("add-to-initiative").addEventListener("click",()=>{const candidate=characters.find(c=>c.id===selectedId);if(candidate)void addToInitiative(candidate.id);});
- $("clear-bleed").addEventListener("click",()=>void clearBleed());
+ $("clear-bleed").addEventListener("click",()=>void clearEffects());
  OBR.scene.items.onChange(()=>{void refresh();});
  OBR.player.onChange(player=>{const picked=(player?.selection||[]).find(id=>characters.some(c=>c.id===id));if(picked){selectedId=picked;render();}});
  OBR.scene.onReadyChange(ready=>{if(ready)void refresh();});await refresh();
