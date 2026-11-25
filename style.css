@@ -99,3 +99,10 @@
 .effect-tag.effect-shield{background:#383838;color:#eee;border-color:#999}
 
 .value-effect-column[data-effect="gel"] .value-buttons button.active{outline-color:#33FFFF}
+
+/* Current effects use fixed four-column rows with consistent sizing. */
+.current-effect-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:stretch;gap:6px;margin-top:8px;width:100%}
+.current-effect-row>.effect-tag,.current-effect-row>.value-effect-tag{width:100%;min-width:0;box-sizing:border-box}
+.current-effect-row>.effect-tag{padding-left:4px;padding-right:4px}
+.current-effect-row>.value-effect-tag{min-height:38px;padding:5px 4px}
+.current-effect-row .current-effect-icon,.current-effect-row .value-effect-tag img{width:15px;height:15px;flex:0 0 auto}
