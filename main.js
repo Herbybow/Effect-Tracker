@@ -1,8 +1,8 @@
 import OBR, { buildShape, buildImage } from "@owlbear-rodeo/sdk";
 const NS="com.effect-tracker/data";
 const INIT_NS="rodeo.owlbear.initiative-tracker/metadata";
-const EFFECT_TYPES={bleed:{label:"Bleed",icon:"Bleed.svg",color:"blood"},poison:{label:"Poison",icon:"Poison.svg",color:"poison"},fire:{label:"Fire",icon:"Fire.svg",color:"fire"},regen:{label:"Regen",icon:"Regen.svg",color:"regen"},mark:{label:"Mark",icon:"Mark.svg",color:"mark"},horror:{label:"Horror",icon:"Horror.svg",color:"horror"},shield:{label:"Shield",icon:"Shield.svg",color:"shield"}};
-const VALUE_EFFECTS={stunt:{label:"Stunt",icon:"Stunt.svg",color:"stunt"},root:{label:"Root",icon:"Root.svg",color:"root"},blind:{label:"Blind",icon:"Blind.svg",color:"blind"},silent:{label:"Silent",icon:"Silent.svg",color:"silent"},gel:{label:"Gel",icon:"Gel.svg",color:"gel"}};
+const EFFECT_TYPES={bleed:{label:"Bleed",icon:"Bleed.png",color:"blood"},poison:{label:"Poison",icon:"Poison.png",color:"poison"},fire:{label:"Fire",icon:"Fire.png",color:"fire"},regen:{label:"Regen",icon:"Regen.png",color:"regen"},mark:{label:"Mark",icon:"Mark.png",color:"mark"},horror:{label:"Horror",icon:"Horror.png",color:"horror"},shield:{label:"Shield",icon:"Shield.png",color:"shield"}};
+const VALUE_EFFECTS={stunt:{label:"Stunt",icon:"Stunt.png",color:"stunt"},root:{label:"Root",icon:"Root.png",color:"root"},blind:{label:"Blind",icon:"Blind.png",color:"blind"},silent:{label:"Silent",icon:"Silent.png",color:"silent"},gel:{label:"Gel",icon:"Gel.png",color:"gel"}};
 let characters=[], activeId=null, selectedId=null, busy=false, queued=false, personalData={};
 const $=id=>document.getElementById(id);
 const isCharacter=item=>item?.layer==="CHARACTER"&&item?.type==="IMAGE";
@@ -96,9 +96,10 @@ async function ensureEffectSlots(character){
  const values=valueEffectsOf(character);
  const activeTypes=new Set([...chargeTypes,...values.filter(effect=>effect.value>0).map(effect=>effect.type)]);
  const oldMarkers=await OBR.scene.items.getItems(item=>item.metadata?.[NS]?.effectTrackerIcon?.characterId===character.id);
- const existingMarkers=await OBR.scene.items.getItems(item=>item.metadata?.[NS]?.effectTrackerSvg?.characterId===character.id);
- const existingByType=new Map(existingMarkers.map(item=>[item.metadata[NS].effectTrackerSvg.type,item]));
- const staleIds=[...oldMarkers,...existingMarkers.filter(item=>!activeTypes.has(item.metadata[NS].effectTrackerSvg.type))].map(item=>item.id);
+ const oldSvgMarkers=await OBR.scene.items.getItems(item=>item.metadata?.[NS]?.effectTrackerSvg?.characterId===character.id);
+ const existingMarkers=await OBR.scene.items.getItems(item=>item.metadata?.[NS]?.effectTrackerPng?.characterId===character.id);
+ const existingByType=new Map(existingMarkers.map(item=>[item.metadata[NS].effectTrackerPng.type,item]));
+ const staleIds=[...oldMarkers,...oldSvgMarkers,...existingMarkers.filter(item=>!activeTypes.has(item.metadata[NS].effectTrackerPng.type))].map(item=>item.id);
  if(staleIds.length)await OBR.scene.items.deleteItems(staleIds);
  const icons=[];
  for(let row=0;row<rowTypes.length;row++){
@@ -109,7 +110,7 @@ async function ensureEffectSlots(character){
    if(!iconName)continue;
    const iconSize=Math.max(8,Math.min(height*0.82,width/4*0.82));
    const icon=buildImage()
-    .url(`https://herbybow.github.io/Effect-Tracker/effects/${iconName}`)
+    .url(`https://herbybow.github.io/Effect-Tracker/PNG/${iconName}`)
     .width(iconSize)
     .height(iconSize)
     .position({x:left+width*(index+0.5)/4,y:positionFor(row).y})
@@ -117,7 +118,7 @@ async function ensureEffectSlots(character){
     .attachedTo(character.id)
     .disableHit(true)
     .locked(true)
-    .metadata({[NS]:{effectTrackerSvg:{characterId:character.id,type,row}}})
+    .metadata({[NS]:{effectTrackerPng:{characterId:character.id,type,row}}})
     .build();
    icons.push(icon);
   }
