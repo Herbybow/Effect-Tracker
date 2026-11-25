@@ -59,7 +59,7 @@ OBR.onReady(()=>{void(async()=>{try{
  document.querySelectorAll(".effect-column button[data-tier]").forEach(b=>b.addEventListener("click",()=>applyEffect(b.dataset.effect,Number(b.dataset.tier))));
 $("assign-character").addEventListener("click",async()=>{const candidate=characters.find(c=>c.id===selectedId);if(!candidate){notify("Select a character token on the map first.");return;}try{await setActive(candidate.id);notify(`${candidate.name||"Character"} is now assigned to your Effect Tracker.`);}catch(e){console.error(e);notify(`Could not assign character: ${e?.message||e}`);}});
  $("add-to-initiative").addEventListener("click",()=>{const candidate=characters.find(c=>c.id===selectedId);if(candidate)void addToInitiative(candidate.id);});
- $("clear-bleed").addEventListener("click",()=>void clearEffects());
+ $("clear-effects").addEventListener("click",()=>void clearEffects());
  OBR.scene.items.onChange(()=>{void refresh();});
  OBR.player.onChange(player=>{const picked=(player?.selection||[]).find(id=>characters.some(c=>c.id===id));if(picked){selectedId=picked;render();}});
  OBR.scene.onReadyChange(ready=>{if(ready)void refresh();});await refresh();
