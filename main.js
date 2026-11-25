@@ -1,4 +1,4 @@
-import OBR from "@owlbear-rodeo/sdk";
+import OBR, { buildShape } from "@owlbear-rodeo/sdk";
 const NS="com.effect-tracker/data";
 const INIT_NS="rodeo.owlbear.initiative-tracker/metadata";
 const EFFECT_TYPES={bleed:{label:"Bleed",icon:"Bleed.svg",color:"blood"},poison:{label:"Poison",icon:"Poison.svg",color:"poison"},fire:{label:"Fire",icon:"Fire.svg",color:"fire"},regen:{label:"Regen",icon:"Regen.svg",color:"regen"},mark:{label:"Mark",icon:"Mark.svg",color:"mark"},horror:{label:"Horror",icon:"Horror.svg",color:"horror"},shield:{label:"Shield",icon:"Shield.svg",color:"shield"}};
@@ -63,9 +63,26 @@ async function migratePersonalEffects(){
  if(Object.keys(byCharacter).length){const clean={...personalData};delete clean.effectsByCharacter;await OBR.player.setMetadata({[NS]:clean});personalData=clean;}
 }
 
-async function refresh(){if(busy){queued=true;return;}busy=true;try{characters=await OBR.scene.items.getItems(isCharacter);const meta=await OBR.player.getMetadata();personalData=meta?.[NS]||{};await migratePersonalEffects();const preferred=personalData.activeCharacterId;activeId=characters.some(i=>i.id===preferred)?preferred:null;if(!selectedId||!characters.some(i=>i.id===selectedId))selectedId=((await OBR.player.getSelection())||[]).find(id=>characters.some(i=>i.id===id))||null;render();}catch(e){console.error(e);notify(`Could not load characters: ${e?.message||e}`);}finally{busy=false;if(queued){queued=false;void refresh();}}}
+async function ensureEffectSlots(character){
+ if(!character)return;
+ const bounds=await OBR.scene.items.getItemBounds([character.id]);
+ const existing=await OBR.scene.items.getItems(item=>item.metadata?.[NS]?.effectTrackerSlot?.characterId===character.id);
+ const present=new Set(existing.map(item=>item.metadata?.[NS]?.effectTrackerSlot?.index));
+ const width=Math.max(20,bounds.width*0.23),height=Math.max(10,bounds.height*0.16),gap=Math.max(3,bounds.width*0.02),outerGap=Math.max(4,bounds.height*0.04);
+ const total=width*4+gap*3,left=bounds.center.x-total/2,centerY=bounds.min.y-outerGap-height/2;
+ const colors=["#e36b86","#ffcc00","#33ffff","#999999"];
+ const labels=["Bleed, Poison, Fire, Regen","Stunt, Root, Blind, Silent","Gel, Mark, Horror, Shield","Future effects"];
+ const shapes=[];
+ for(let index=0;index<4;index++){
+  if(present.has(index))continue;
+  const shape=buildShape().name(`Effect Tracker Slot ${index+1}: ${labels[index]}`).shapeType("RECTANGLE").width(width).height(height).position({x:left+width/2+index*(width+gap),y:centerY}).fillColor(colors[index]).fillOpacity(0.12).strokeColor(colors[index]).strokeOpacity(0.95).strokeWidth(2).attachedTo(character.id).layer("ATTACHMENT").disableHit(true).locked(true).metadata({[NS]:{effectTrackerSlot:{characterId:character.id,index}}}).build();
+  shapes.push(shape);
+ }
+ if(shapes.length)await OBR.scene.items.addItems(shapes);
+}
+async function refresh(){if(busy){queued=true;return;}busy=true;try{characters=await OBR.scene.items.getItems(isCharacter);const meta=await OBR.player.getMetadata();personalData=meta?.[NS]||{};await migratePersonalEffects();const preferred=personalData.activeCharacterId;activeId=characters.some(i=>i.id===preferred)?preferred:null;if(activeId){const assigned=characters.find(i=>i.id===activeId);if(assigned)await ensureEffectSlots(assigned);}if(!selectedId||!characters.some(i=>i.id===selectedId))selectedId=((await OBR.player.getSelection())||[]).find(id=>characters.some(i=>i.id===id))||null;render();}catch(e){console.error(e);notify(`Could not load characters: ${e?.message||e}`);}finally{busy=false;if(queued){queued=false;void refresh();}}}
 async function update(id,mutate){await OBR.scene.items.updateItems([id],items=>{for(const item of items){const d=JSON.parse(JSON.stringify(item.metadata?.[NS]||{}));d.effects??={};mutate(d);item.metadata={...item.metadata,[NS]:d};}});}
-async function setActive(id){const meta=await OBR.player.getMetadata(),data=JSON.parse(JSON.stringify(meta?.[NS]||{}));data.activeCharacterId=id;delete data.effectsByCharacter;await OBR.player.setMetadata({[NS]:data});personalData=data;activeId=id;selectedId=id;render();}
+async function setActive(id){const meta=await OBR.player.getMetadata(),data=JSON.parse(JSON.stringify(meta?.[NS]||{}));data.activeCharacterId=id;delete data.effectsByCharacter;await OBR.player.setMetadata({[NS]:data});personalData=data;activeId=id;selectedId=id;const assigned=characters.find(i=>i.id===id);if(assigned)await ensureEffectSlots(assigned);render();}
 async function addToInitiative(id){
  const item=characters.find(c=>c.id===id);if(!item){notify("Select a character token on the map first.");return;}
  try{await OBR.scene.items.updateItems([id],items=>{for(const sceneItem of items){if(sceneItem.metadata?.[INIT_NS]===undefined){sceneItem.metadata={...sceneItem.metadata,[INIT_NS]:{count:"0",active:false}};}}});notify(`${item.name||"Character"} added to Initiative.`);await refresh();}
