@@ -42,7 +42,7 @@ function render(){
  else {
   const chargeTag=effect=>{const tag=document.createElement("span");tag.className=`effect-tag effect-${effect.type}`;tag.style.minHeight=`${26+(Math.max(1,Number(effect.charges)||1)-1)*12}px`;const amount=document.createElement("span");amount.textContent=`${effect.charges}×${effect.power}`;const icon=document.createElement("img");icon.className="current-effect-icon";icon.src=`./effects/${effect.icon}`;icon.alt="";tag.append(amount,icon);return tag;};
   const valueTag=effect=>{const tag=document.createElement("span");tag.className=`value-effect-tag value-${effect.type}`;const icon=document.createElement("img");icon.src=`./effects/${effect.icon}`;icon.alt=effect.label;const value=document.createElement("strong");value.textContent=String(effect.value);tag.append(icon,value);return tag;};
-  const appendRow=entries,className=>{if(!entries.length)return;const row=document.createElement("div");row.className=`current-effect-row ${className}`;for(const entry of entries)row.append(entry.kind==="value"?valueTag(entry.effect):chargeTag(entry.effect));current.append(row);};
+  const appendRow=(entries,className)=>{if(!entries.length)return;const row=document.createElement("div");row.className=`current-effect-row ${className}`;for(const entry of entries)row.append(entry.kind==="value"?valueTag(entry.effect):chargeTag(entry.effect));current.append(row);};
   appendRow(firstEffects.map(effect=>({kind:"charge",effect})),"current-row-one");
   appendRow(secondValues.map(effect=>({kind:"value",effect})),"current-row-two");
   appendRow([...thirdValues.map(effect=>({kind:"value",effect})),...thirdEffects.map(effect=>({kind:"charge",effect}))],"current-row-three");
