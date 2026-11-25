@@ -80,6 +80,6 @@
 .value-effect-column[data-effect="blind"] .value-buttons button.active{background:#555}
 .value-effect-column[data-effect="silent"] .value-buttons button.active{background:#54204f}
 .current-value-effects{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.value-effect-tag{display:inline-flex;align-items:center;gap:4px;border-radius:7px;padding:4px 7px;font-size:11px;border:1px solid #555;background:#302b35}
-.value-effect-tag img{width:16px;height:16px;object-fit:contain}
+.value-effect-tag{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:58px;min-height:38px;border-radius:7px;padding:5px 8px;font-size:11px;border:1px solid #555;background:#302b35;box-sizing:border-box}
+.value-effect-tag img{width:15px;height:15px;object-fit:contain;flex:0 0 auto}
 .value-stunt{color:#FFCC00;border-color:#b38d00}.value-root{color:#d97745;border-color:#993300}.value-blind{color:#fff;border-color:#888}.value-silent{color:#FF33FF;border-color:#b52daf}
