@@ -67,15 +67,22 @@ async function ensureEffectSlots(character){
  if(!character)return;
  const bounds=await OBR.scene.items.getItemBounds([character.id]);
  const existing=await OBR.scene.items.getItems(item=>item.metadata?.[NS]?.effectTrackerSlot?.characterId===character.id);
- const present=new Set(existing.map(item=>item.metadata?.[NS]?.effectTrackerSlot?.index));
- const width=Math.max(20,bounds.width*0.23),height=Math.max(10,bounds.height*0.16),gap=Math.max(3,bounds.width*0.02),outerGap=Math.max(4,bounds.height*0.04);
- const total=width*4+gap*3,left=bounds.center.x-total/2,centerY=bounds.min.y-outerGap-height/2;
+ const width=Math.max(44,bounds.width*1.35),height=Math.max(10,bounds.height*0.14),gap=Math.max(3,bounds.height*0.025),outerGap=Math.max(4,bounds.height*0.04);
+ const totalHeight=height*4+gap*3,left=bounds.center.x-width*0.62,centerY=bounds.min.y-outerGap-totalHeight/2;
  const colors=["#e36b86","#ffcc00","#33ffff","#999999"];
  const labels=["Bleed, Poison, Fire, Regen","Stunt, Root, Blind, Silent","Gel, Mark, Horror, Shield","Future effects"];
+ const byIndex=new Map(existing.map(item=>[item.metadata[NS].effectTrackerSlot.index,item]));
+ const positionFor=index=>({x:left+width/2,y:centerY-totalHeight/2+height/2+index*(height+gap)});
+ if(existing.length){
+  await OBR.scene.items.updateItems(existing.map(item=>item.id),items=>items.map(item=>{
+   const index=item.metadata?.[NS]?.effectTrackerSlot?.index;
+   return {...item,width,height,position:positionFor(index)};
+  }));
+ }
  const shapes=[];
  for(let index=0;index<4;index++){
-  if(present.has(index))continue;
-  const shape=buildShape().name(`Effect Tracker Slot ${index+1}: ${labels[index]}`).shapeType("RECTANGLE").width(width).height(height).position({x:left+width/2+index*(width+gap),y:centerY}).fillColor(colors[index]).fillOpacity(0.12).strokeColor(colors[index]).strokeOpacity(0.95).strokeWidth(2).attachedTo(character.id).layer("ATTACHMENT").disableHit(true).locked(true).metadata({[NS]:{effectTrackerSlot:{characterId:character.id,index}}}).build();
+  if(byIndex.has(index))continue;
+  const shape=buildShape().name(`Effect Tracker Slot ${index+1}: ${labels[index]}`).shapeType("RECTANGLE").width(width).height(height).position(positionFor(index)).fillColor(colors[index]).fillOpacity(0.12).strokeColor(colors[index]).strokeOpacity(0.95).strokeWidth(2).attachedTo(character.id).layer("ATTACHMENT").disableHit(true).locked(true).metadata({[NS]:{effectTrackerSlot:{characterId:character.id,index}}}).build();
   shapes.push(shape);
  }
  if(shapes.length)await OBR.scene.items.addItems(shapes);
