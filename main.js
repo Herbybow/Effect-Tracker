@@ -115,6 +115,7 @@ async function ensureEffectSlots(character){
    }else{
     const marker=buildText()
      .plainText(markerLetters[type])
+     .textType("PLAIN")
      .width(width/4)
      .height(height)
      .fontFamily("Arial")
@@ -128,7 +129,7 @@ async function ensureEffectSlots(character){
      .textAlign("CENTER")
      .textAlignVertical("MIDDLE")
      .position(position)
-     .layer("ATTACHMENT")
+     .layer("TEXT")
      .attachedTo(character.id)
      .disableHit(true)
      .locked(true)
@@ -147,7 +148,7 @@ async function ensureEffectSlots(character){
    const row=rowTypes.findIndex(types=>types.includes(type));
    const index=rowTypes[row]?.indexOf(type)??0;
    const markerHeight=Math.max(8,Math.min(height*0.82,width/4));
-   return {...item,width:width/4,height,position:{x:left+width*(index+0.5)/4,y:positionFor(row).y},fontSize:markerHeight*0.8};
+   return {...item,layer:"TEXT",width:width/4,height,position:{x:left+width*(index+0.5)/4,y:positionFor(row).y},text:{...item.text,plainText:markerLetters[type],type:"PLAIN",style:{...item.text?.style,fontFamily:"Arial",fontSize:markerHeight*0.8,fontWeight:700,textAlign:"CENTER",textAlignVertical:"MIDDLE",fillColor:"#ffffff",fillOpacity:1,strokeColor:"#000000",strokeOpacity:1,strokeWidth:1,padding:0}}};
   }));
  }
  if(addMarkers.length)await OBR.scene.items.addItems(addMarkers);
