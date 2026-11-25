@@ -53,6 +53,35 @@ function render(){
  if(item){const values=valueEffectsOf(item);document.querySelectorAll(".value-effect-column").forEach(column=>{const effect=values.find(e=>e.type===column.dataset.effect);column.querySelectorAll("button[data-value]").forEach(button=>button.classList.toggle("active",!!effect&&effect.value>0&&Number(button.dataset.value)===effect.value));});}
 
 }
+
+const EFFECT_HELP={
+ bleed:{title:"Saignement",description:"Subit un dégât par Bleed au début de chaque tour.",color:"#e36b86"},
+ poison:{title:"Empoisonné",description:"Subit un dégât par Poison au début de chaque tour.",color:"#78d58d"},
+ fire:{title:"Enflammé",description:"Subit un dégât par Flamme au début de chaque tour.",color:"#ffad70"},
+ regen:{title:"Renouvelé",description:"Subit un soin par Regen au début de chaque tour.",color:"#ffd484"},
+ stunt:{title:"Assommé",description:"Empêche toute action tant que le Stunt est actif.",color:"#FFCC00"},
+ root:{title:"Enchevêtré",description:"Empêche l'Esquive, -1 déplacement par Root actif.",color:"#d97745"},
+ blind:{title:"Aveuglé",description:"-10 Toucher par Blind actif.",color:"#FFFFFF"},
+ silent:{title:"Silencieux",description:"Empêche Sort, Techniques et Dialogues tant que le Silence est actif.",color:"#FF33FF"},
+ gel:{title:"Gelé",description:"-5 Toucher et Critique par Gel actif, ainsi qu'un point de dégat par action.",color:"#33FFFF"},
+ mark:{title:"Marqué",description:"Subit +1 dégât par Marque pour chaque dégât subit.",color:"#c45b91"},
+ horror:{title:"Horreur",description:"Subit un mental par horreur au début de chaque tour.",color:"#9966cc"},
+ shield:{title:"Protection",description:"Subit -1 dégât par Protection pour chaque dégât subit.",color:"#999999"}
+};
+function showEffectHelp(type,anchor){
+ const data=EFFECT_HELP[type],tip=$("effect-help");
+ if(!data||!tip)return;
+ if(tip.dataset.effect===type&&tip.classList.contains("visible")){tip.classList.remove("visible");return;}
+ $("effect-help-title").textContent=data.title;
+ $("effect-help-title").style.color=data.color;
+ $("effect-help-description").textContent=data.description;
+ tip.dataset.effect=type;tip.classList.add("visible");
+ const rect=anchor.getBoundingClientRect(),width=tip.offsetWidth||280;
+ const left=Math.max(8,Math.min(window.innerWidth-width-8,rect.left+rect.width/2-width/2));
+ tip.style.left=left+"px";
+ tip.style.top=Math.min(window.innerHeight- tip.offsetHeight-8,rect.bottom+8)+"px";
+}
+
 async function migratePersonalEffects(){
  const byCharacter=personalData?.effectsByCharacter||{};
  for(const [id,entry] of Object.entries(byCharacter)){
@@ -129,11 +158,13 @@ async function addToInitiative(id){
  catch(e){console.error(e);notify(`Could not add to Initiative: ${errorText(e)}`);}
 }
 async function clearEffects(){const item=active();if(!item){notify("Assign a character first.");return;}try{let changed=false;await update(item.id,d=>{d.effects??={};for(const type of ["bleed","poison","fire","regen","horror"]){const raw=d.effects[type],list=Array.isArray(raw)?raw:(raw&&typeof raw==="object"?[raw]:[]);const remaining=list.map(b=>{const charges=Math.max(0,Number(b.charges)||0);if(charges>0)changed=true;return {...b,charges:Math.max(0,charges-1)};}).filter(b=>b.charges>0);if(remaining.length)d.effects[type]=remaining;else delete d.effects[type];}});if(!changed){notify("No active effect charges to clear.");return;}notify("Consumed one charge from each active effect. No damage was dealt.");await refresh();}catch(e){console.error(e);notify(`Could not clear effects: ${errorText(e)}`);}}
-async function setValueEffect(type,value){const item=active(),config=VALUE_EFFECTS[type];if(!item||!config)return;try{await update(item.id,d=>{d.effects[type]=value;});notify(value===0?`${config.label} cleared.`:`${config.label} set to ${value}.`);document.querySelectorAll(`.value-effect-column[data-effect="${type}"] button`).forEach(button=>button.classList.toggle("active",Number(button.dataset.value)===value&&value!==0));await refresh();}catch(e){console.error(e);notify(`Could not update ${config.label}: ${errorText(e)}`);}}
+async function setValueEffect(type,value){const item=active(),config=VALUE_EFFECTS[type];if(!item||!config)return;try{await update(item.id,d=>{d.effects[type]=value;});document.querySelectorAll(`.value-effect-column[data-effect="${type}"] button`).forEach(button=>button.classList.toggle("active",Number(button.dataset.value)===value&&value!==0));await refresh();}catch(e){console.error(e);notify(`Could not update ${config.label}: ${errorText(e)}`);}}
 async function hitEffects(){const item=active();if(!item){notify("Assign a character first.");return;}try{let changed=false;await update(item.id,d=>{d.effects??={};for(const type of ["stunt","gel"]){const value=Math.max(0,Number(d.effects[type])||0);if(value>0){d.effects[type]=Math.max(0,value-1);changed=true;}}for(const type of ["mark","shield"]){const raw=d.effects[type],list=Array.isArray(raw)?raw:(raw&&typeof raw==="object"?[raw]:[]);const remaining=list.map(b=>{const charges=Math.max(0,Number(b.charges)||0);if(charges>0)changed=true;return {...b,charges:Math.max(0,charges-1)};}).filter(b=>b.charges>0);if(remaining.length)d.effects[type]=remaining;else delete d.effects[type];}});if(!changed){notify("No Stunt, Gel, Mark or Shield to reduce.");return;}notify("Hit applied: Stunt/Gel power and Mark/Shield charges reduced by 1.");await refresh();}catch(e){console.error(e);notify(`Could not apply Hit: ${errorText(e)}`);}}
-async function applyEffect(type,power){const item=active(),config=EFFECT_TYPES[type];if(!item||!config){notify("Assign a character first.");return;}try{await update(item.id,d=>{const v=d.effects[type],list=Array.isArray(v)?v:(v&&typeof v==="object"?[v]:[]);list.push({id:crypto.randomUUID(),power,charges:3,appliedAt:new Date().toISOString(),schemaVersion:2});d.effects[type]=list.filter(b=>b.charges>0);});notify(`Added a separate 3×${power} ${config.label} to ${item.name||"the character"}.`);await refresh();}catch(e){console.error(e);notify(`Could not apply ${config.label}: ${errorText(e)}`);}}
+async function applyEffect(type,power){const item=active(),config=EFFECT_TYPES[type];if(!item||!config){notify("Assign a character first.");return;}try{await update(item.id,d=>{const v=d.effects[type],list=Array.isArray(v)?v:(v&&typeof v==="object"?[v]:[]);list.push({id:crypto.randomUUID(),power,charges:3,appliedAt:new Date().toISOString(),schemaVersion:2});d.effects[type]=list.filter(b=>b.charges>0);});await refresh();}catch(e){console.error(e);notify(`Could not apply ${config.label}: ${errorText(e)}`);}}
 OBR.onReady(()=>{void(async()=>{try{
  await OBR.action.setHeight(1300);await OBR.action.setWidth(325);
+ document.querySelectorAll(".drop[alt]").forEach(icon=>icon.addEventListener("click",event=>{event.stopPropagation();const type=icon.alt.toLowerCase();showEffectHelp(type,icon);}));
+ document.addEventListener("click",event=>{const tip=$("effect-help");if(tip&&!tip.contains(event.target)&&!event.target.closest(".drop"))tip.classList.remove("visible");});
  document.querySelectorAll(".effect-column button[data-tier]").forEach(b=>b.addEventListener("click",()=>applyEffect(b.dataset.effect,Number(b.dataset.tier))));
  document.querySelectorAll(".value-effect-column button[data-value]").forEach(b=>b.addEventListener("click",()=>setValueEffect(b.dataset.effect,Number(b.dataset.value))));
 $("assign-character").addEventListener("click",async()=>{const candidate=characters.find(c=>c.id===selectedId);if(!candidate){notify("Select a character token on the map first.");return;}try{await setActive(candidate.id);notify(`${candidate.name||"Character"} is now assigned to your Effect Tracker.`);}catch(e){console.error(e);notify(`Could not assign character: ${errorText(e)}`);}});
