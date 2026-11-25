@@ -35,6 +35,7 @@ function render(){
  else {const tags=document.createElement("div");tags.className="current-effect-tags";for(const effect of activeEffects){const tag=document.createElement("span");tag.className=`effect-tag effect-${effect.type}`;tag.style.minHeight=`${26+(Math.max(1,Number(effect.charges)||1)-1)*12}px`;const amount=document.createElement("span");amount.textContent=`${effect.charges}×${effect.power}`;const icon=document.createElement("img");icon.className="current-effect-icon";icon.src=`./effects/${effect.icon}`;icon.alt="";tag.append(amount,icon);tags.append(tag);}current.append(tags);}
  if(item){const values=valueEffectsOf(item).filter(e=>e.value>0);if(values.length){const line=document.createElement("div");line.className="current-value-effects";for(const effect of values){const tag=document.createElement("span");tag.className=`value-effect-tag value-${effect.type}`;const icon=document.createElement("img");icon.src=`./effects/${effect.icon}`;icon.alt=effect.label;const value=document.createElement("strong");value.textContent=String(effect.value);tag.append(icon,value);line.append(tag);}current.append(line);}}
  $("bleed-controls").hidden=!full;
+ if(item){const values=valueEffectsOf(item);document.querySelectorAll(".value-effect-column").forEach(column=>{const effect=values.find(e=>e.type===column.dataset.effect);column.querySelectorAll("button[data-value]").forEach(button=>button.classList.toggle("active",!!effect&&effect.value>0&&Number(button.dataset.value)===effect.value));});}
 
 }
 async function migratePersonalEffects(){
