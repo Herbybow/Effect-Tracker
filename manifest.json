@@ -7,8 +7,8 @@
   "action": {
     "title": "Effect Tracker",
     "icon": "https://herbybow.github.io/Effect-Tracker/icon.svg",
-    "popover": "https://herbybow.github.io/Effect-Tracker/?rev=20261125-v014-effects",
-    "height": 620,
-    "width": 360
+    "popover": "https://herbybow.github.io/Effect-Tracker/?rev=20261125-v015-window-size",
+    "height": 1240,
+    "width": 320
   }
 }
