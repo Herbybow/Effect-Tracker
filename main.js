@@ -108,21 +108,23 @@ async function ensureEffectSlots(character){
   const iconSize=Math.max(0.1,Math.min(height*0.72,width/4*0.72));
   return {row,index,iconSize,position:{x:left+width*(index+0.5)/4,y:positionFor(row).y}};
  };
- const activeExisting=existingMarkers.filter(item=>activeTypes.has(item.metadata[NS].effectTrackerPng.type));
- if(activeExisting.length)await OBR.scene.items.updateItems(activeExisting.map(item=>item.id),items=>items.map(item=>{
-  const type=item.metadata?.[NS]?.effectTrackerPng?.type;
-  const geometry=geometryFor(type);
-  return geometry?{...item,position:geometry.position,scale:{x:geometry.iconSize,y:geometry.iconSize}}:item;
- }));
+ const geometryFor=type=>{
+  const row=rowTypes.findIndex(types=>types.includes(type));
+  if(row<0)return null;
+  const index=rowTypes[row].indexOf(type);
+  const iconSize=Math.max(0.1,Math.min(height*0.25,width/4*0.25));
+  return {row,index,iconSize,position:{x:left+width*(index+0.5)/4,y:positionFor(row).y}};
+ };
  const icons=[];
- for(const type of activeTypes){
-  if(existingByType.has(type))continue;
+ const iconTypes=[...activeTypes].filter(type=>geometryFor(type));
+ const replaceIds=existingMarkers.map(item=>item.id);
+ if(replaceIds.length)await OBR.scene.items.deleteItems(replaceIds);
+ for(const type of iconTypes){
   const geometry=geometryFor(type);
-  if(!geometry)continue;
   const iconName=(EFFECT_TYPES[type]?.icon||VALUE_EFFECTS[type]?.icon)?.replace(/\\.svg$/i,".png");
   if(!iconName)continue;
   const icon=buildImage(
-    {width:256,height:256,mime:"image/png",url:`https://herbybow.github.io/Effect-Tracker/PNG/${iconName}`},
+    {width:256,height:256,mime:"image/png",url:`https://raw.githubusercontent.com/Herbybow/Effect-Tracker/main/public/PNG/${iconName}`},
     {offset:{x:0,y:0},dpi:256}
    )
    .scale({x:geometry.iconSize,y:geometry.iconSize})
