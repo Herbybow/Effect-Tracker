@@ -16,9 +16,9 @@ import OBR, { isImage, Item, Player } from "@owlbear-rodeo/sdk";
 import "./style.css";
 
 const INIT="rodeo.owlbear.initiative-tracker/metadata";
-const EFFECTS="com.effect-tracker/data";
+const EFFECTS_NS="com.effect-tracker/data";
 type EffectType="bleed"|"poison"|"fire";
-const EFFECTS:{type:EffectType;icon:string;label:string}[]=[{type:"bleed",icon:"Bleed.svg",label:"Bleed"},{type:"poison",icon:"Poison.svg",label:"Poison"},{type:"fire",icon:"Fire.svg",label:"Fire"}];
+const EFFECT_DEFS:{type:EffectType;icon:string;label:string}[]=[{type:"bleed",icon:"Bleed.svg",label:"Bleed"},{type:"poison",icon:"Poison.svg",label:"Poison"},{type:"fire",icon:"Fire.svg",label:"Fire"}];
 type Entry={id:string;count:string;name:string;active:boolean;visible:boolean;activeEffects:EffectType[];turnDamageByEffect?:Partial<Record<EffectType,number>>;turnDamage?:number};
 const valid=(v:any)=>v&&typeof v==="object"&&typeof v.count==="string"&&typeof v.active==="boolean";
 
@@ -29,8 +29,8 @@ function Tracker(){
  useEffect(()=>{
   const refresh=(sceneItems:Item[])=>setItems(sceneItems.filter(isImage).flatMap(item=>{
    const m=item.metadata[INIT]; if(!valid(m))return [];
-   const effectData=item.metadata[EFFECTS]?.effects||{};
-   const activeEffects=EFFECTS.filter(e=>{const raw=effectData[e.type],list=Array.isArray(raw)?raw:(raw&&typeof raw==="object"?[raw]:[]);return list.some((b:any)=>(Number(b.charges)||0)>0);}).map(e=>e.type);
+   const effectData=item.metadata[EFFECTS_NS]?.effects||{};
+   const activeEffects=EFFECT_DEFS.filter(e=>{const raw=effectData[e.type],list=Array.isArray(raw)?raw:(raw&&typeof raw==="object"?[raw]:[]);return list.some((b:any)=>(Number(b.charges)||0)>0);}).map(e=>e.type);
    const saved= m.turnDamageByEffect&&typeof m.turnDamageByEffect==="object"?m.turnDamageByEffect:undefined;
    return [{id:item.id,count:m.count,name:item.text.plainText||item.name,active:m.active,visible:item.visible,activeEffects,turnDamageByEffect:saved,turnDamage:typeof m.turnDamage==="number"?m.turnDamage:undefined}];
   }));
@@ -51,16 +51,16 @@ function Tracker(){
     initiative.active=item.id===next.id;
     if(item.id===previous?.id&&item.id!==next.id){delete initiative.turnDamage;delete initiative.turnDamageByEffect;}
     if(item.id!==next.id)continue;
-    const data=item.metadata[EFFECTS], effects={...(data?.effects||{})};
+    const data=item.metadata[EFFECTS_NS], effects={...(data?.effects||{})};
     const damageByEffect:Partial<Record<EffectType,number>>={};
-    for(const effect of EFFECTS){
+    for(const effect of EFFECT_DEFS){
      const raw=effects[effect.type],list=Array.isArray(raw)?raw:(raw&&typeof raw==="object"?[raw]:[]);
      let damage=0;
      const remaining=list.map((b:any)=>{const charges=Math.max(0,Number(b.charges)||0),power=Math.max(0,Number(b.power)||Number(b.damage)||0);if(charges>0)damage+=power;return {...b,charges:Math.max(0,charges-1)};}).filter((b:any)=>b.charges>0);
      if(remaining.length)effects[effect.type]=remaining;else delete effects[effect.type];
      if(damage>0)damageByEffect[effect.type]=damage;
     }
-    if(data?.effects)item.metadata[EFFECTS]={...data,effects};
+    if(data?.effects)item.metadata[EFFECTS_NS]={...data,effects};
     if(Object.keys(damageByEffect).length){initiative.turnDamageByEffect=damageByEffect;initiative.turnDamage=Object.values(damageByEffect).reduce((sum,n)=>sum+(n||0),0);}else{delete initiative.turnDamageByEffect;delete initiative.turnDamage;}
    }
   });
