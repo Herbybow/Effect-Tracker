@@ -91,20 +91,25 @@ async function selectBleedAttachment(){
   const meta=await OBR.player.getMetadata(),data=JSON.parse(JSON.stringify(meta?.[NS]||{}));
   data.mapIconAssets={...(data.mapIconAssets||{}),bleed:selected.image};
   await OBR.player.setMetadata({[NS]:data});personalData=data;
-  await showLocalIconPrototype();
-  notify("Bleed attachment received. Check above your assigned character for the local test icon.");
+  await syncLocalBleedIcon();
+  notify("Bleed attachment saved. Its local icon will appear only while Bleed is active.");
  }catch(error){console.error(error);notify("Bleed attachment selection failed: "+errorText(error));}
  finally{if(button)button.disabled=false;}
 }
-async function showLocalIconPrototype(){
- const character=active();if(!character)return;
- const asset=personalData?.mapIconAssets?.bleed;if(!asset?.url)return;
+async function syncLocalBleedIcon(character=active()){
  const existing=await OBR.scene.local.getItems(item=>item.metadata?.[NS]?.effectTrackerAssetTest===true);
- if(existing.length)await OBR.scene.local.deleteItems(existing.map(item=>item.id));
+ const hasBleed=!!character&&effectsOf(character).some(effect=>effect.type==="bleed"&&effect.charges>0);
+ const asset=personalData?.mapIconAssets?.bleed;
+ if(!hasBleed||!asset?.url){
+  if(existing.length)await OBR.scene.local.deleteItems(existing.map(item=>item.id));
+  return;
+ }
  const bounds=await OBR.scene.items.getItemBounds([character.id]);
- const icon=buildImage(asset,{offset:{x:0,y:0},dpi:256}).scale({x:32,y:32})
-  .position({x:bounds.center.x,y:bounds.min.y-40}).layer("ATTACHMENT").attachedTo(character.id)
-  .disableHit(true).locked(true).metadata({[NS]:{effectTrackerAssetTest:true}}).build();
+ const size=Math.max(1,bounds.width*0.02);
+ if(existing.length)await OBR.scene.local.deleteItems(existing.map(item=>item.id));
+ const icon=buildImage(asset,{offset:{x:0,y:0},dpi:256}).scale({x:size,y:size})
+  .position({x:bounds.center.x,y:bounds.min.y-size*0.8}).layer("ATTACHMENT").attachedTo(character.id)
+  .disableHit(true).locked(true).metadata({[NS]:{effectTrackerAssetTest:true,characterId:character.id}}).build();
  await OBR.scene.local.addItems([icon]);
 }
 async function migratePersonalEffects(){
@@ -174,9 +179,9 @@ async function ensureEffectSlots(character){
  if(updates.length)await OBR.scene.items.updateItems(updates.map(x=>x.id),items=>items.map(item=>{const u=updates.find(x=>x.id===item.id);return u?{...item,position:u.geometry.position,scale:{x:u.geometry.iconSize,y:u.geometry.iconSize}}:item;}));
  if(icons.length)await OBR.scene.items.addItems(icons);
 }
-async function refresh(){if(busy){queued=true;return;}busy=true;try{characters=await OBR.scene.items.getItems(isCharacter);const meta=await OBR.player.getMetadata();personalData=meta?.[NS]||{};await migratePersonalEffects();const preferred=personalData.activeCharacterId;activeId=characters.some(i=>i.id===preferred)?preferred:null;if(activeId){const assigned=characters.find(i=>i.id===activeId);if(assigned)await ensureEffectSlots(assigned);}if(!selectedId||!characters.some(i=>i.id===selectedId))selectedId=((await OBR.player.getSelection())||[]).find(id=>characters.some(i=>i.id===id))||null;render();}catch(e){console.error(e);notify(`Could not load characters: ${errorText(e)}`);}finally{busy=false;if(queued){queued=false;void refresh();}}}
+async function refresh(){if(busy){queued=true;return;}busy=true;try{characters=await OBR.scene.items.getItems(isCharacter);const meta=await OBR.player.getMetadata();personalData=meta?.[NS]||{};await migratePersonalEffects();const preferred=personalData.activeCharacterId;activeId=characters.some(i=>i.id===preferred)?preferred:null;if(activeId){const assigned=characters.find(i=>i.id===activeId);if(assigned){await ensureEffectSlots(assigned);await syncLocalBleedIcon(assigned);}}else{await syncLocalBleedIcon(null);}if(!selectedId||!characters.some(i=>i.id===selectedId))selectedId=((await OBR.player.getSelection())||[]).find(id=>characters.some(i=>i.id===id))||null;render();}catch(e){console.error(e);notify(`Could not load characters: ${errorText(e)}`);}finally{busy=false;if(queued){queued=false;void refresh();}}}
 async function update(id,mutate){await OBR.scene.items.updateItems([id],items=>{for(const item of items){const d=JSON.parse(JSON.stringify(item.metadata?.[NS]||{}));d.effects??={};mutate(d);item.metadata={...item.metadata,[NS]:d};}});}
-async function setActive(id){const meta=await OBR.player.getMetadata(),data=JSON.parse(JSON.stringify(meta?.[NS]||{}));data.activeCharacterId=id;delete data.effectsByCharacter;await OBR.player.setMetadata({[NS]:data});personalData=data;activeId=id;selectedId=id;const assigned=characters.find(i=>i.id===id);if(assigned)await ensureEffectSlots(assigned);if(personalData?.mapIconAssets?.bleed)await showLocalIconPrototype();render();}
+async function setActive(id){const meta=await OBR.player.getMetadata(),data=JSON.parse(JSON.stringify(meta?.[NS]||{}));data.activeCharacterId=id;delete data.effectsByCharacter;await OBR.player.setMetadata({[NS]:data});personalData=data;activeId=id;selectedId=id;const assigned=characters.find(i=>i.id===id);if(assigned)await ensureEffectSlots(assigned);await syncLocalBleedIcon(assigned);render();}
 async function addToInitiative(id){
  const item=characters.find(c=>c.id===id);if(!item){notify("Select a character token on the map first.");return;}
  try{await OBR.scene.items.updateItems([id],items=>{for(const sceneItem of items){if(sceneItem.metadata?.[INIT_NS]===undefined){sceneItem.metadata={...sceneItem.metadata,[INIT_NS]:{count:"0",active:false}};}}});notify(`${item.name||"Character"} added to Initiative.`);await refresh();}
