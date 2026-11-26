@@ -12,11 +12,15 @@ import Divider from "@mui/material/Divider";
 import Typography from "@mui/material/Typography";
 import SkipNextRounded from "@mui/icons-material/SkipNextRounded";
 import VisibilityOffRounded from "@mui/icons-material/VisibilityOffRounded";
-import OBR, { isImage, Item, Player } from "@owlbear-rodeo/sdk";
+import OBR, { buildLabel, isImage, Item, Player } from "@owlbear-rodeo/sdk";
 import "./style.css";
 
 const INIT="rodeo.owlbear.initiative-tracker/metadata";
 const EFFECTS_NS="com.effect-tracker/data";
+const DICE_NS="rodeo.owlbear.initiative-tracker/turn-dice";
+const TURN_DICE:{type:Exclude<ValueEffectType,"gel">;color:string;textColor:string}[]=[{type:"stunt",color:"#f2c400",textColor:"#241d00"},{type:"root",color:"#8b5a2b",textColor:"#ffffff"},{type:"blind",color:"#ffffff",textColor:"#222222"},{type:"silent",color:"#f08acb",textColor:"#301027"}];
+const DIE_FACES=["⚀","⚁","⚂","⚃","⚄","⚅"];
+function rollD6(){const value=new Uint32Array(1);if(globalThis.crypto?.getRandomValues)globalThis.crypto.getRandomValues(value);else value[0]=Math.floor(Math.random()*0xffffffff);return value[0]%6+1;}
 type EffectType="bleed"|"poison"|"fire"|"regen"|"mark"|"horror"|"shield";
 type ValueEffectType="stunt"|"root"|"blind"|"silent"|"gel";
 const VALUE_EFFECT_DEFS:{type:ValueEffectType;icon:string;label:string}[]=[{type:"stunt",icon:"Stunt.svg",label:"Stunt"},{type:"root",icon:"Root.svg",label:"Root"},{type:"blind",icon:"Blind.svg",label:"Blind"},{type:"silent",icon:"Silent.svg",label:"Silent"},{type:"gel",icon:"Gel.svg",label:"Gel"}];
@@ -49,6 +53,10 @@ function Tracker(){
  async function nextTurn(){
   const sorted=[...items].sort((a,b)=>parseFloat(b.count)-parseFloat(a.count)); if(!sorted.length)return;
   const previous=sorted.find(i=>i.active), index=sorted.findIndex(i=>i.active), next=sorted[index<0?0:(index+1)%sorted.length];
+  const turnDice=TURN_DICE.flatMap(def=>{const value=Math.max(0,Math.min(9,Number(next.valueEffects[def.type])||0));return value>0?[{...def,value,roll:rollD6()}]:[];});
+  const existingSceneItems=await OBR.scene.items.getItems();
+  const oldDice=existingSceneItems.filter(item=>!!item.metadata[DICE_NS]).map(item=>item.id);
+  if(oldDice.length)await OBR.scene.items.deleteItems(oldDice);
   await OBR.scene.items.updateItems(sorted.map(i=>i.id),sceneItems=>{
    for(const item of sceneItems){
     const initiative=item.metadata[INIT]; if(!valid(initiative))continue;
@@ -65,12 +73,30 @@ function Tracker(){
      if(remaining.length)effects[effect.type]=remaining;else delete effects[effect.type];
      if(damage>0){if(effect.type==="regen")healingByEffect[effect.type]=damage;else damageByEffect[effect.type]=damage;}
     }
+    for(const die of turnDice){const current=Math.max(1,Number(effects[die.type])||1);effects[die.type]=Math.max(1,current-die.roll);}
     const gelPower=Math.max(0,Number(effects.gel)||0);if(gelPower>0){const remainingGel=Math.max(0,gelPower-1);if(remainingGel>0)effects.gel=remainingGel;else delete effects.gel;}
     if(data?.effects)item.metadata[EFFECTS_NS]={...data,effects};
     const turnEffects={...damageByEffect,...healingByEffect};
     if(Object.keys(turnEffects).length){initiative.turnDamageByEffect=turnEffects;initiative.turnDamage=["bleed","poison","fire"].reduce((sum,type)=>sum-(damageByEffect[type as EffectType]||0),0)+(healingByEffect.regen||0);}else{delete initiative.turnDamageByEffect;delete initiative.turnDamage;}
    }
   });
+  if(turnDice.length){
+   const bounds=await OBR.scene.items.getItemBounds([next.id]);
+   const center=bounds.center;
+   const gap=54;
+   const startX=center.x-((turnDice.length-1)*gap)/2;
+   const diceItems=turnDice.map((die,i)=>buildLabel()
+    .plainText(DIE_FACES[die.roll-1])
+    .width(46).height(46).fontSize(34).fontWeight(800)
+    .textAlign("CENTER").textAlignVertical("MIDDLE")
+    .fillColor(die.textColor).backgroundColor(die.color).backgroundOpacity(1).cornerRadius(9)
+    .position({x:startX+i*gap,y:center.y+bounds.height/2+38})
+    .layer("ATTACHMENT").attachedTo(next.id).locked(true).disableHit(true)
+    .name(die.type+" D6: "+die.roll)
+    .metadata({[DICE_NS]:{characterId:next.id,effect:die.type,roll:die.roll}})
+    .build());
+   await OBR.scene.items.addItems(diceItems);
+  }
  }
  function changeCount(id:string,value:string){setItems(old=>old.map(i=>i.id===id?{...i,count:value}:i));OBR.scene.items.updateItems([id],sceneItems=>sceneItems.forEach(item=>{const m=item.metadata[INIT];if(valid(m))m.count=value;}));}
  return <Stack height="100vh">
