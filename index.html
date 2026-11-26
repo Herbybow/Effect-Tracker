@@ -19,8 +19,8 @@
 
     <section class="panel asset-import-panel">
       <div class="section-title"><h2>Map icon setup</h2></div>
-      <p class="hint">Select the Bleed PNG you already imported into Owlbear Attachments. The extension will use it for a local-only map test.</p>
-      <button id="select-map-icons" class="secondary" type="button">Choose Bleed attachment</button>
+      <p class="hint">Select all 12 Effect Tracker PNGs from your existing Owlbear Attachments. They will be saved to your player profile and used automatically on future visits.</p>
+      <button id="select-map-icons" class="secondary" type="button">Import all 12 effect icons</button>
     </section>
 
     <section class="panel">
@@ -95,7 +95,7 @@
     <div id="toast" role="status" aria-live="polite"></div>
   </main>
   <script type="module">
-    import("./main.js?rev=20261126-v024-bleed-attachment-only-test").catch((error) => {
+    import("./main.js?rev=20261126-v025-all-local-effect-icons").catch((error) => {
       console.error("Effect Tracker module failed to load:", error);
     });
   </script>
