@@ -52,6 +52,7 @@ function render(){
  }
  $("bleed-controls").hidden=!full;
  $("third-effect-controls").hidden=!full;
+ $("modifier-board").hidden=!full;
  if(item){const values=valueEffectsOf(item);document.querySelectorAll(".value-effect-column").forEach(column=>{const effect=values.find(e=>e.type===column.dataset.effect);column.querySelectorAll("button[data-value]").forEach(button=>button.classList.toggle("active",!!effect&&effect.value>0&&Number(button.dataset.value)===effect.value));});}
 
 }
