@@ -118,10 +118,10 @@
 .modifier-column input{width:100%;min-width:0;box-sizing:border-box;background:#302b35;color:#eee;border:1px solid #555;border-radius:6px;padding:7px 3px;text-align:center;font-size:12px}
 .modifier-column>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;width:100%}
 .modifier-column button{min-width:0;padding:6px 0;background:#302b35;border:1px solid #666;border-radius:5px;color:#eee;font-weight:700}
-.modifier-column[data-effect="toucher"] button{border-color:#b89a3b;color:#f0c85a}
-.modifier-column[data-effect="critique"] button{border-color:#9c65b8;color:#dc8cff}
-.modifier-column[data-effect="resistance"] button{border-color:#5b9c70;color:#8fc9a0}
-.value-effect-column[data-effect="esquive"] .value-buttons button{border-color:#5689b4;color:#80c8ff}
-.value-effect-column[data-effect="esquive"] .value-buttons button.active{background:#203d58;outline-color:#80c8ff}
-.value-esquive{color:#80c8ff;border-color:#5689b4}
+.modifier-column[data-effect="toucher"] button{border-color:#3399CC;color:#3399CC}
+.modifier-column[data-effect="critique"] button{border-color:#CCCC99;color:#CCCC99}
+.modifier-column[data-effect="resistance"] button{border-color:#CC6666;color:#CC6666}
+.value-effect-column[data-effect="esquive"] .value-buttons button{border-color:#669966;color:#669966}
+.value-effect-column[data-effect="esquive"] .value-buttons button.active{background:#203d2d;outline-color:#669966}
+.value-esquive{color:#669966;border-color:#669966}
 .current-row-four{margin-top:8px}
