@@ -109,3 +109,19 @@
 
 #effect-help{display:none;position:fixed;z-index:1000;width:min(280px,calc(100vw - 24px));padding:12px 14px;background:#000;color:#fff;border:1px solid #444;border-radius:9px;box-shadow:0 5px 20px #0009;pointer-events:none}#effect-help.visible{display:block}#effect-help strong{display:block;font-size:14px;margin-bottom:5px}#effect-help p{margin:0;color:#fff;font-size:12px;line-height:1.4}.drop{cursor:pointer}
 .asset-import-panel .hint{margin:0 0 8px}.asset-import-panel .secondary{margin-top:0}
+
+/* 0.1.6 modifier controls */
+.modifier-board{margin-top:14px;padding-top:12px;border-top:1px solid #3b3542}
+.modifier-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.modifier-column{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.modifier-column>.drop{width:38px;height:38px;object-fit:contain}
+.modifier-column input{width:100%;min-width:0;box-sizing:border-box;background:#302b35;color:#eee;border:1px solid #555;border-radius:6px;padding:7px 3px;text-align:center;font-size:12px}
+.modifier-column>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;width:100%}
+.modifier-column button{min-width:0;padding:6px 0;background:#302b35;border:1px solid #666;border-radius:5px;color:#eee;font-weight:700}
+.modifier-column[data-effect="toucher"] button{border-color:#b89a3b;color:#f0c85a}
+.modifier-column[data-effect="critique"] button{border-color:#9c65b8;color:#dc8cff}
+.modifier-column[data-effect="resistance"] button{border-color:#5b9c70;color:#8fc9a0}
+.value-effect-column[data-effect="esquive"] .value-buttons button{border-color:#5689b4;color:#80c8ff}
+.value-effect-column[data-effect="esquive"] .value-buttons button.active{background:#203d58;outline-color:#80c8ff}
+.value-esquive{color:#80c8ff;border-color:#5689b4}
+.current-row-four{margin-top:8px}
