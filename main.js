@@ -122,7 +122,7 @@ async function syncLocalEffectIcons(character=active()){
   const row=rowTypes.findIndex(types=>types.includes(type));if(row<0)continue;
   const index=rowTypes[row].indexOf(type);
   const size=Math.max(0.001,Math.min(height*0.02,bounds.width/4*0.02));
-  wanted.set(type,{asset,size,position:{x:left+bounds.width*(index+0.5)/4,y:slotTop+height*(row+0.5)}});
+  wanted.set(type,{asset,size,position:{x:left+bounds.width*(type==="bleed"?0.1875:(index+0.5)/4),y:slotTop+height*(row+0.7)}});
  }
  const existingByType=new Map();
  for(const item of existing){
