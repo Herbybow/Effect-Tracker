@@ -1,4 +1,4 @@
-import OBR, { buildShape, buildImage, buildImageUpload } from "@owlbear-rodeo/sdk";
+import OBR, { buildShape, buildImage, buildImageUpload, buildLabel } from "@owlbear-rodeo/sdk";
 const NS="com.effect-tracker/data";
 const INIT_NS="rodeo.owlbear.initiative-tracker/metadata";
 const EFFECT_TYPES={bleed:{label:"Bleed",icon:"Bleed.svg",color:"blood"},poison:{label:"Poison",icon:"Poison.svg",color:"poison"},fire:{label:"Fire",icon:"Fire.svg",color:"fire"},regen:{label:"Regen",icon:"Regen.svg",color:"regen"},mark:{label:"Mark",icon:"Mark.svg",color:"mark"},horror:{label:"Horror",icon:"Horror.svg",color:"horror"},shield:{label:"Shield",icon:"Shield.svg",color:"shield"}};
@@ -162,6 +162,36 @@ async function syncLocalEffectIcons(character=active()){
  }));
  if(additions.length)await OBR.scene.local.addItems(additions);
 }
+async function syncLocalTurnDice(character=active()){
+ const existing=await OBR.scene.local.getItems(item=>!!item.metadata?.[NS]?.effectTrackerLocalDie);
+ const rolls=character?.metadata?.[INIT_NS]?.turnDiceRolls||[];
+ const wanted=new Map(rolls.filter(d=>["stunt","root","blind","silent"].includes(d.type)&&Number(d.roll)>0).map(d=>[d.type,d]));
+ const bounds=character?await OBR.scene.items.getItemBounds([character.id]):null;
+ const center=bounds?.center;
+ const gap=104,startX=center?center.x-((wanted.size-1)*gap)/2:0;
+ const y=center?center.y+bounds.height/2+48:0;
+ const oldByType=new Map();
+ for(const item of existing){
+  const meta=item.metadata?.[NS]?.effectTrackerLocalDie;
+  if(meta?.characterId!==character?.id||!wanted.has(meta?.type)){await OBR.scene.local.deleteItems([item.id]);continue;}
+  oldByType.set(meta.type,item);
+ }
+ const palette={stunt:{bg:"#f2c400",fg:"#241d00"},root:{bg:"#a87545",fg:"#000000"},blind:{bg:"#ffffff",fg:"#222222"},silent:{bg:"#f08acb",fg:"#301027"}};
+ const faces=["⚀","⚁","⚂","⚃","⚄","⚅"],add=[];
+ for(const [type,die] of wanted){
+  const old=oldByType.get(type),roll=Number(die.roll),x=startX+[...wanted.keys()].indexOf(type)*gap;
+  if(old){const p=old.position||{};if(old.text?.plainText!==faces[roll-1]||Math.abs((p.x??0)-x)>0.01||Math.abs((p.y??0)-y)>0.01){
+    await OBR.scene.local.updateItems([old.id],items=>items.map(item=>({...item,position:{x,y},text:{...item.text,plainText:faces[roll-1]}})));
+   }continue;
+  }
+  const colors=palette[type];
+  add.push(buildLabel().plainText(faces[roll-1]).width(32).height(32).padding(0).fontSize(24).fontWeight(800)
+   .textAlign("CENTER").textAlignVertical("MIDDLE").fillColor(colors.fg).backgroundColor(colors.bg).backgroundOpacity(1)
+   .position({x,y}).layer("ATTACHMENT").attachedTo(character.id).locked(true).disableHit(true)
+   .name(type+" D6: "+roll).metadata({[NS]:{effectTrackerLocalDie:{characterId:character.id,type,roll}}}).build());
+ }
+ if(add.length)await OBR.scene.local.addItems(add);
+}
 async function migratePersonalEffects(){
  const byCharacter=personalData?.effectsByCharacter||{};
  for(const [id,entry] of Object.entries(byCharacter)){
@@ -187,9 +217,9 @@ async function ensureEffectSlots(character){
  );
  if(sharedIcons.length)await OBR.scene.items.deleteItems(sharedIcons.map(item=>item.id));
 }
-async function refresh(){if(busy){queued=true;return;}busy=true;try{characters=await OBR.scene.items.getItems(isCharacter);const meta=await OBR.player.getMetadata();personalData=meta?.[NS]||{};await migratePersonalEffects();const preferred=personalData.activeCharacterId;activeId=characters.some(i=>i.id===preferred)?preferred:null;if(activeId){const assigned=characters.find(i=>i.id===activeId);if(assigned){await ensureEffectSlots(assigned);await syncLocalEffectIcons(assigned);}}else{await syncLocalEffectIcons(null);}if(!selectedId||!characters.some(i=>i.id===selectedId))selectedId=((await OBR.player.getSelection())||[]).find(id=>characters.some(i=>i.id===id))||null;render();}catch(e){console.error(e);notify(`Could not load characters: ${errorText(e)}`);}finally{busy=false;if(queued){queued=false;void refresh();}}}
+async function refresh(){if(busy){queued=true;return;}busy=true;try{characters=await OBR.scene.items.getItems(isCharacter);const meta=await OBR.player.getMetadata();personalData=meta?.[NS]||{};await migratePersonalEffects();const preferred=personalData.activeCharacterId;activeId=characters.some(i=>i.id===preferred)?preferred:null;if(activeId){const assigned=characters.find(i=>i.id===activeId);if(assigned){await ensureEffectSlots(assigned);await syncLocalEffectIcons(assigned);await syncLocalTurnDice(assigned);}}else{await syncLocalEffectIcons(null);await syncLocalTurnDice(null);}if(!selectedId||!characters.some(i=>i.id===selectedId))selectedId=((await OBR.player.getSelection())||[]).find(id=>characters.some(i=>i.id===id))||null;render();}catch(e){console.error(e);notify(`Could not load characters: ${errorText(e)}`);}finally{busy=false;if(queued){queued=false;void refresh();}}}
 async function update(id,mutate){await OBR.scene.items.updateItems([id],items=>{for(const item of items){const d=JSON.parse(JSON.stringify(item.metadata?.[NS]||{}));d.effects??={};mutate(d);item.metadata={...item.metadata,[NS]:d};}});}
-async function setActive(id){const meta=await OBR.player.getMetadata(),data=JSON.parse(JSON.stringify(meta?.[NS]||{}));data.activeCharacterId=id;delete data.effectsByCharacter;await OBR.player.setMetadata({[NS]:data});personalData=data;activeId=id;selectedId=id;const assigned=characters.find(i=>i.id===id);if(assigned)await ensureEffectSlots(assigned);await syncLocalEffectIcons(assigned);render();}
+async function setActive(id){const meta=await OBR.player.getMetadata(),data=JSON.parse(JSON.stringify(meta?.[NS]||{}));data.activeCharacterId=id;delete data.effectsByCharacter;await OBR.player.setMetadata({[NS]:data});personalData=data;activeId=id;selectedId=id;const assigned=characters.find(i=>i.id===id);if(assigned)await ensureEffectSlots(assigned);await syncLocalEffectIcons(assigned);await syncLocalTurnDice(assigned);render();}
 async function addToInitiative(id){
  const item=characters.find(c=>c.id===id);if(!item){notify("Select a character token on the map first.");return;}
  try{await OBR.scene.items.updateItems([id],items=>{for(const sceneItem of items){if(sceneItem.metadata?.[INIT_NS]===undefined){sceneItem.metadata={...sceneItem.metadata,[INIT_NS]:{count:"0",active:false}};}}});notify(`${item.name||"Character"} added to Initiative.`);await refresh();}
