@@ -18,7 +18,7 @@ import "./style.css";
 const INIT="rodeo.owlbear.initiative-tracker/metadata";
 const EFFECTS_NS="com.effect-tracker/data";
 const DICE_NS="rodeo.owlbear.initiative-tracker/turn-dice";
-const TURN_DICE:{type:Exclude<ValueEffectType,"gel">;color:string;textColor:string}[]=[{type:"stunt",color:"#f2c400",textColor:"#241d00"},{type:"root",color:"#8b5a2b",textColor:"#ffffff"},{type:"blind",color:"#ffffff",textColor:"#222222"},{type:"silent",color:"#f08acb",textColor:"#301027"}];
+const TURN_DICE:{type:Exclude<ValueEffectType,"gel">;color:string;textColor:string}[]=[{type:"stunt",color:"#f2c400",textColor:"#241d00"},{type:"root",color:"#a87545",textColor:"#000000"},{type:"blind",color:"#ffffff",textColor:"#222222"},{type:"silent",color:"#f08acb",textColor:"#301027"}];
 const DIE_FACES=["⚀","⚁","⚂","⚃","⚄","⚅"];
 function rollD6(){const value=new Uint32Array(1);if(globalThis.crypto?.getRandomValues)globalThis.crypto.getRandomValues(value);else value[0]=Math.floor(Math.random()*0xffffffff);return value[0]%6+1;}
 type EffectType="bleed"|"poison"|"fire"|"regen"|"mark"|"horror"|"shield";
@@ -73,7 +73,7 @@ function Tracker(){
      if(remaining.length)effects[effect.type]=remaining;else delete effects[effect.type];
      if(damage>0){if(effect.type==="regen")healingByEffect[effect.type]=damage;else damageByEffect[effect.type]=damage;}
     }
-    for(const die of turnDice){const current=Math.max(1,Number(effects[die.type])||1);effects[die.type]=Math.max(1,current-die.roll);}
+    for(const die of turnDice){const current=Math.max(0,Number(effects[die.type])||0);const remaining=Math.max(0,current-die.roll);if(remaining>0)effects[die.type]=remaining;else delete effects[die.type];}
     const gelPower=Math.max(0,Number(effects.gel)||0);if(gelPower>0){const remainingGel=Math.max(0,gelPower-1);if(remainingGel>0)effects.gel=remainingGel;else delete effects.gel;}
     if(data?.effects)item.metadata[EFFECTS_NS]={...data,effects};
     const turnEffects={...damageByEffect,...healingByEffect};
@@ -83,14 +83,14 @@ function Tracker(){
   if(turnDice.length){
    const bounds=await OBR.scene.items.getItemBounds([next.id]);
    const center=bounds.center;
-   const gap=54;
+   const gap=104;
    const startX=center.x-((turnDice.length-1)*gap)/2;
    const diceItems=turnDice.map((die,i)=>buildLabel()
     .plainText(DIE_FACES[die.roll-1])
-    .width(46).height(46).fontSize(34).fontWeight(800)
+    .width(64).height(64).fontSize(52).fontWeight(800)
     .textAlign("CENTER").textAlignVertical("MIDDLE")
     .fillColor(die.textColor).backgroundColor(die.color).backgroundOpacity(1).cornerRadius(9)
-    .position({x:startX+i*gap,y:center.y+bounds.height/2+38})
+    .position({x:startX+i*gap,y:center.y+bounds.height/2+48})
     .layer("ATTACHMENT").attachedTo(next.id).locked(true).disableHit(true)
     .name(die.type+" D6: "+die.roll)
     .metadata({[DICE_NS]:{characterId:next.id,effect:die.type,roll:die.roll}})
