@@ -17,6 +17,12 @@
       <div class="character-actions"><button id="assign-character" class="assign-button" type="button" hidden>Assign</button><button id="add-to-initiative" class="assign-button initiative-button" type="button" aria-label="Add to Initiative" title="Add to Initiative" hidden>+</button></div>
     </div>
 
+    <section class="panel asset-import-panel">
+      <div class="section-title"><h2>Map icon setup</h2></div>
+      <p class="hint">One-time setup: download the 12 PNGs from GitHub and import them into your Owlbear Attachments.</p>
+      <button id="import-map-icons" class="secondary" type="button">Import map icons</button>
+    </section>
+
     <section class="panel">
       <div class="section-title"><h2>Current</h2></div>
       <div id="current-effects" class="empty">Select a character token on the map, then press Assign to see its current effects.</div>
@@ -89,7 +95,7 @@
     <div id="toast" role="status" aria-live="polite"></div>
   </main>
   <script type="module">
-    import("./main.js?rev=20261126-v021-effect-tooltips").catch((error) => {
+    import("./main.js?rev=20261126-v022-asset-import-prototype").catch((error) => {
       console.error("Effect Tracker module failed to load:", error);
     });
   </script>
