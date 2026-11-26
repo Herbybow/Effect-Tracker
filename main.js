@@ -85,7 +85,7 @@ function showEffectHelp(type,anchor){
 async function selectBleedAttachment(){
  const button=$("select-map-icons");if(button)button.disabled=true;
  try{
-  const downloads=await OBR.assets.downloadImages(false,"","ATTACHMENT");
+  const downloads=await OBR.assets.downloadImages(false,"Bleed","ATTACHMENT");
   const selected=downloads?.[0];
   if(!selected?.image?.url)throw new Error("No usable image was returned. Select the Bleed PNG from your Attachments.");
   const meta=await OBR.player.getMetadata(),data=JSON.parse(JSON.stringify(meta?.[NS]||{}));
@@ -102,7 +102,7 @@ async function showLocalIconPrototype(){
  const existing=await OBR.scene.local.getItems(item=>item.metadata?.[NS]?.effectTrackerAssetTest===true);
  if(existing.length)await OBR.scene.local.deleteItems(existing.map(item=>item.id));
  const bounds=await OBR.scene.items.getItemBounds([character.id]);
- const icon=buildImage(asset,{offset:{x:0,y:0},dpi:256}).scale({x:0.16,y:0.16})
+ const icon=buildImage(asset,{offset:{x:0,y:0},dpi:256}).scale({x:32,y:32})
   .position({x:bounds.center.x,y:bounds.min.y-40}).layer("ATTACHMENT").attachedTo(character.id)
   .disableHit(true).locked(true).metadata({[NS]:{effectTrackerAssetTest:true}}).build();
  await OBR.scene.local.addItems([icon]);
