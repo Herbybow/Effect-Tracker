@@ -68,7 +68,7 @@ function Tracker(){
     const gelPower=Math.max(0,Number(effects.gel)||0);if(gelPower>0){const remainingGel=Math.max(0,gelPower-1);if(remainingGel>0)effects.gel=remainingGel;else delete effects.gel;}
     if(data?.effects)item.metadata[EFFECTS_NS]={...data,effects};
     const turnEffects={...damageByEffect,...healingByEffect};
-    if(Object.keys(turnEffects).length){initiative.turnDamageByEffect=turnEffects;initiative.turnDamage=Object.values(damageByEffect).reduce((sum,n)=>sum-(n||0),0)+Object.values(healingByEffect).reduce((sum,n)=>sum+(n||0),0);}else{delete initiative.turnDamageByEffect;delete initiative.turnDamage;}
+    if(Object.keys(turnEffects).length){initiative.turnDamageByEffect=turnEffects;initiative.turnDamage=["bleed","poison","fire"].reduce((sum,type)=>sum-(damageByEffect[type as EffectType]||0),0)+(healingByEffect.regen||0);}else{delete initiative.turnDamageByEffect;delete initiative.turnDamage;}
    }
   });
  }
