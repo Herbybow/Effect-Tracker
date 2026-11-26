@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Effect Tracker</title>
-  <link rel="stylesheet" href="./style.css?rev=20261126-v016-modifiers" />
+  <link rel="stylesheet" href="./style.css?rev=20261127-v016-modifier-fixes" />
 </head>
 <body>
   <main class="app">
@@ -88,7 +88,7 @@
     <section id="modifier-board" class="panel modifier-board">
       <div class="section-title"><h2>Modifiers</h2></div>
       <div class="modifier-grid">
-        <div class="modifier-column" data-effect="toucher"><img class="drop" src="./effects/Toucher.svg" alt="Toucher"/><input id="modifier-toucher" type="number" min="-100" max="100" step="1" placeholder="−100 to 100"/><div><button class="modifier-charge" data-effect="toucher" data-charges="1">1</button><button class="modifier-charge" data-effect="toucher" data-charges="2">2</button><button class="modifier-charge" data-effect="toucher" data-charges="3">3</button></div></div>
+        <div class="modifier-column" data-effect="toucher"><img class="drop" src="./effects/Toucher.svg" alt="Toucher"/><input id="modifier-toucher" type="text" inputmode="decimal" placeholder="−100 to 100"/><div><button class="modifier-charge" data-effect="toucher" data-charges="1">1</button><button class="modifier-charge" data-effect="toucher" data-charges="2">2</button><button class="modifier-charge" data-effect="toucher" data-charges="3">3</button></div></div>
         <div class="modifier-column" data-effect="critique"><img class="drop" src="./effects/Critique.svg" alt="Critique"/><input id="modifier-critique" type="number" min="-100" max="100" step="1" placeholder="−100 to 100"/><div><button class="modifier-charge" data-effect="critique" data-charges="1">1</button><button class="modifier-charge" data-effect="critique" data-charges="2">2</button><button class="modifier-charge" data-effect="critique" data-charges="3">3</button></div></div>
         <div class="modifier-column" data-effect="resistance"><img class="drop" src="./effects/Résistance.svg" alt="Résistance"/><input id="modifier-resistance" type="number" min="-100" max="100" step="1" placeholder="−100 to 100"/><div><button class="modifier-charge" data-effect="resistance" data-charges="1">1</button><button class="modifier-charge" data-effect="resistance" data-charges="2">2</button><button class="modifier-charge" data-effect="resistance" data-charges="3">3</button></div></div>
       </div>
@@ -103,7 +103,7 @@
     <div id="toast" role="status" aria-live="polite"></div>
   </main>
   <script type="module">
-    import("./main.js?rev=20261126-v016-modifiers").catch((error) => {
+    import("./main.js?rev=20261127-v016-modifier-fixes").catch((error) => {
       console.error("Effect Tracker module failed to load:", error);
     });
   </script>
