@@ -110,7 +110,7 @@ async function syncLocalBleedIcon(character=active()){
  const size=Math.max(0.001,Math.min(slotHeight*0.02,bounds.width/4*0.02));
  if(existing.length)await OBR.scene.local.deleteItems(existing.map(item=>item.id));
  const icon=buildImage(asset,{offset:{x:0,y:0},dpi:256}).scale({x:size,y:size})
-  .position({x:bounds.min.x+bounds.width*0.0625,y:slotTop}).layer("ATTACHMENT").attachedTo(character.id)
+  .position({x:bounds.min.x+bounds.width*0.5625,y:slotTop}).layer("ATTACHMENT").attachedTo(character.id)
   .disableHit(true).locked(true).metadata({[NS]:{effectTrackerAssetTest:true,characterId:character.id}}).build();
  await OBR.scene.local.addItems([icon]);
 }
