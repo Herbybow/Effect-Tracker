@@ -112,7 +112,7 @@ async function selectBleedAttachment(){
  finally{if(button)button.disabled=false;}
 }
 async function syncLocalEffectIcons(character=active()){
- const existing=await OBR.scene.local.getItems(item=>item.metadata?.[NS]?.effectTrackerAssetTest===true);
+ const existing=await OBR.scene.local.getItems(item=>!!item.metadata?.[NS]?.effectTrackerAssetTest);
  const assets=personalData?.mapIconAssets||{};
  const activeTypes=new Set();
  if(character){
