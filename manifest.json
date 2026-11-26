@@ -1,13 +1,13 @@
 {
   "name": "Effect Tracker",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "manifest_version": 1,
   "author": "Custom extension",
   "description": "Token-based status effects for Owlbear Rodeo: Bleed, Poison, and Fire.",
   "action": {
     "title": "Effect Tracker",
     "icon": "https://herbybow.github.io/Effect-Tracker/icon.svg",
-    "popover": "https://herbybow.github.io/Effect-Tracker/?rev=20261125-v018-spacing",
+    "popover": "https://herbybow.github.io/Effect-Tracker/?rev=20261126-v015-initiative",
     "height": 1300,
     "width": 325
   }
