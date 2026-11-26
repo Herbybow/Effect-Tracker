@@ -86,19 +86,28 @@ const MAP_ICON_TYPES=["bleed","poison","fire","regen","stunt","root","blind","si
 async function selectBleedAttachment(){
  const button=$("select-map-icons");if(button)button.disabled=true;
  try{
-  const downloads=await OBR.assets.downloadImages(true,".png","ATTACHMENT");
-  const assets={};
-  for(const download of downloads||[]){
-   const normalized=String(download.name||"").toLowerCase().replace(/\\.png$/i,"");
-   if(MAP_ICON_TYPES.includes(normalized)&&download.image?.url)assets[normalized]=download.image;
-  }
-  const missing=MAP_ICON_TYPES.filter(type=>!assets[type]);
-  if(missing.length)throw new Error("Missing attachments: "+missing.join(", ")+". Select all 12 Effect Tracker PNG files in the Attachment picker.");
+  const downloads=await OBR.assets.downloadImages(true,"Bleed","ATTACHMENT");
   const meta=await OBR.player.getMetadata(),data=JSON.parse(JSON.stringify(meta?.[NS]||{}));
+  const assets={...(data.mapIconAssets||{})};
+  let imported=0;
+  for(const download of downloads||[]){
+   let normalized=String(download.name||"").trim().toLowerCase();
+   normalized=normalized.replace(/^effect tracker\\s*-\\s*/,"").replace(/\\.png$/i,"").trim();
+   if(MAP_ICON_TYPES.includes(normalized)&&download.image?.url){
+    assets[normalized]=download.image;imported++;
+   }
+  }
   data.mapIconAssets=assets;
   await OBR.player.setMetadata({[NS]:data});personalData=data;
-  const character=active();await syncLocalEffectIcons(character);
-  notify("All 12 effect icons saved to your player profile. They will be used automatically from now on.");
+  const missing=MAP_ICON_TYPES.filter(type=>!assets[type]);
+  await syncLocalEffectIcons(active());
+  if(!imported&&missing.length===MAP_ICON_TYPES.length){
+   notify("No matching PNG names were returned. In the picker, clear the search and select the Effect Tracker icons.");
+  }else if(missing.length){
+   notify(imported+" icon(s) saved. Still missing: "+missing.join(", ")+". You can select the remaining icons with this button.");
+  }else{
+   notify("All 12 effect icons saved to your player profile. They will be used automatically from now on.");
+  }
  }catch(error){console.error(error);notify("Attachment selection failed: "+errorText(error));}
  finally{if(button)button.disabled=false;}
 }
