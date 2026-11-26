@@ -53,15 +53,13 @@ function Tracker(){
  async function nextTurn(){
   const sorted=[...items].sort((a,b)=>parseFloat(b.count)-parseFloat(a.count)); if(!sorted.length)return;
   const previous=sorted.find(i=>i.active), index=sorted.findIndex(i=>i.active), next=sorted[index<0?0:(index+1)%sorted.length];
-  const turnDice=TURN_DICE.flatMap(def=>{const value=Math.max(0,Math.min(9,Number(next.valueEffects[def.type])||0));return value>0?[{...def,value,roll:rollD6()}]:[];});
-  const existingSceneItems=await OBR.scene.items.getItems();
-  const oldDice=existingSceneItems.filter(item=>!!item.metadata[DICE_NS]).map(item=>item.id);
-  if(oldDice.length)await OBR.scene.items.deleteItems(oldDice);
+  const turnDice=TURN_DICE.flatMap(def=>{const value=Math.max(0,Math.min(9,Number(next.valueEffects[def.type])||0));return value>0?[{type:def.type,value,roll:rollD6()}]:[];});
   await OBR.scene.items.updateItems(sorted.map(i=>i.id),sceneItems=>{
    for(const item of sceneItems){
     const initiative=item.metadata[INIT]; if(!valid(initiative))continue;
     initiative.active=item.id===next.id;
-    if(item.id===previous?.id&&item.id!==next.id){delete initiative.turnDamage;delete initiative.turnDamageByEffect;}
+    if(item.id===previous?.id&&item.id!==next.id){delete initiative.turnDamage;delete initiative.turnDamageByEffect;delete initiative.turnDiceRolls;}
+    if(item.id===next.id)initiative.turnDiceRolls=turnDice.map(d=>({type:d.type,roll:d.roll}));
     if(item.id!==next.id)continue;
     const data=item.metadata[EFFECTS_NS], effects={...(data?.effects||{})};
     const damageByEffect:Partial<Record<EffectType,number>>={};
@@ -80,23 +78,6 @@ function Tracker(){
     if(Object.keys(turnEffects).length){initiative.turnDamageByEffect=turnEffects;initiative.turnDamage=["bleed","poison","fire"].reduce((sum,type)=>sum-(damageByEffect[type as EffectType]||0),0)+(healingByEffect.regen||0);}else{delete initiative.turnDamageByEffect;delete initiative.turnDamage;}
    }
   });
-  if(turnDice.length){
-   const bounds=await OBR.scene.items.getItemBounds([next.id]);
-   const center=bounds.center;
-   const gap=104;
-   const startX=center.x-((turnDice.length-1)*gap)/2;
-   const diceItems=turnDice.map((die,i)=>buildLabel()
-    .plainText(DIE_FACES[die.roll-1])
-    .width(32).height(32).padding(0).fontSize(24).fontWeight(800)
-    .textAlign("CENTER").textAlignVertical("MIDDLE")
-    .fillColor(die.textColor).backgroundColor(die.color).backgroundOpacity(1)
-    .position({x:startX+i*gap,y:center.y+bounds.height/2+48})
-    .layer("ATTACHMENT").attachedTo(next.id).locked(true).disableHit(true)
-    .name(die.type+" D6: "+die.roll)
-    .metadata({[DICE_NS]:{characterId:next.id,effect:die.type,roll:die.roll}})
-    .build());
-   await OBR.scene.items.addItems(diceItems);
-  }
  }
  function changeCount(id:string,value:string){setItems(old=>old.map(i=>i.id===id?{...i,count:value}:i));OBR.scene.items.updateItems([id],sceneItems=>sceneItems.forEach(item=>{const m=item.metadata[INIT];if(valid(m))m.count=value;}));}
  return <Stack height="100vh">
