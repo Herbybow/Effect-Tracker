@@ -92,7 +92,7 @@ async function selectBleedAttachment(){
   let imported=0;
   for(const download of downloads||[]){
    let normalized=String(download.name||"").trim().toLowerCase();
-   normalized=normalized.replace(/^effect tracker\\s*-\\s*/,"").replace(/\\.png$/i,"").trim();
+   normalized=normalized.replace(/^effect tracker\s*-\s*/,"").replace(/\.png$/i,"").trim();
    if(MAP_ICON_TYPES.includes(normalized)&&download.image?.url){
     assets[normalized]=download.image;imported++;
    }
