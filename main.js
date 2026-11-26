@@ -83,32 +83,38 @@ function showEffectHelp(type,anchor){
 }
 
 const MAP_ICON_NAMES=["Bleed.png","Poison.png","Fire.png","Regen.png","Stunt.png","Root.png","Blind.png","Silent.png","Gel.png","Mark.png","Horror.png","Shield.png"];
-async function importMapIcons(){
- const button=$("import-map-icons");if(button)button.disabled=true;
+async function uploadGitHubIcons(){
+ const button=$("upload-map-icons");if(button)button.disabled=true;
  try{
   const uploads=[];
   for(const name of MAP_ICON_NAMES){
    const response=await fetch("https://raw.githubusercontent.com/Herbybow/Effect-Tracker/main/public/PNG/"+name,{cache:"no-store"});
    if(!response.ok)throw new Error("GitHub download failed for "+name+" ("+response.status+")");
    const blob=await response.blob(),file=new File([blob],name,{type:"image/png"});
-   uploads.push(buildImageUpload(file).name("Effect Tracker - "+name).build());
+   uploads.push(buildImageUpload(file).name(name).build());
   }
   await OBR.assets.uploadImages(uploads,"ATTACHMENT");
-  notify("PNG files uploaded. In the next picker, select all 12 Effect Tracker icons.");
-  const downloads=await OBR.assets.downloadImages(true,"Effect Tracker","ATTACHMENT");
+  notify("Upload step complete. Next, click Select imported icons and choose all 12.");
+ }catch(error){console.error(error);notify("GitHub upload failed: "+errorText(error));}
+ finally{if(button)button.disabled=false;}
+}
+async function selectImportedIcons(){
+ const button=$("select-map-icons");if(button)button.disabled=true;
+ try{
+  const downloads=await OBR.assets.downloadImages(true,"","ATTACHMENT");
   const assets={};
   for(const download of downloads||[]){
-   const normalized=String(download.name||"").toLowerCase();
-   const match=MAP_ICON_NAMES.find(name=>normalized.endsWith(name.toLowerCase()));
-   if(match&&download.image?.url)assets[match.replace(/\.png$/i,"").toLowerCase()]=download.image;
+   const normalized=String(download.name||"").toLowerCase().replace(/\\.png$/i,"");
+   const match=MAP_ICON_NAMES.find(name=>name.toLowerCase().replace(/\\.png$/i,"")===normalized);
+   if(match&&download.image?.url)assets[match.replace(/\\.png$/i,"").toLowerCase()]=download.image;
   }
   const found=Object.keys(assets).length;
-  if(found!==MAP_ICON_NAMES.length)throw new Error("Only "+found+" of 12 matching icons were returned. Select all 12 imported icons and try again.");
+  if(found!==MAP_ICON_NAMES.length)throw new Error("The picker returned "+found+" of 12 expected icons. Select all 12 Effect Tracker PNGs (including Bleed.png) and try again.");
   const meta=await OBR.player.getMetadata(),data=JSON.parse(JSON.stringify(meta?.[NS]||{}));
   data.mapIconAssets=assets;await OBR.player.setMetadata({[NS]:data});personalData=data;
   await showLocalIconPrototype();
-  notify("All 12 icons are saved for your player. A local Bleed icon test was added if a character is assigned.");
- }catch(error){console.error(error);notify("Icon import failed: "+errorText(error));}
+  notify("All 12 icons are saved for your player. The local Bleed test icon should now appear above the assigned character.");
+ }catch(error){console.error(error);notify("Asset selection failed: "+errorText(error));}
  finally{if(button)button.disabled=false;}
 }
 async function showLocalIconPrototype(){
@@ -209,7 +215,8 @@ OBR.onReady(()=>{void(async()=>{try{
  document.querySelectorAll(".value-effect-column button[data-value]").forEach(b=>b.addEventListener("click",()=>setValueEffect(b.dataset.effect,Number(b.dataset.value))));
 $("assign-character").addEventListener("click",async()=>{const candidate=characters.find(c=>c.id===selectedId);if(!candidate){notify("Select a character token on the map first.");return;}try{await setActive(candidate.id);notify(`${candidate.name||"Character"} is now assigned to your Effect Tracker.`);}catch(e){console.error(e);notify(`Could not assign character: ${errorText(e)}`);}});
  $("add-to-initiative").addEventListener("click",()=>{const candidate=characters.find(c=>c.id===selectedId);if(candidate)void addToInitiative(candidate.id);});
- $("import-map-icons").addEventListener("click",()=>void importMapIcons());
+ $("upload-map-icons").addEventListener("click",()=>void uploadGitHubIcons());
+ $("select-map-icons").addEventListener("click",()=>void selectImportedIcons());
  $("clear-effects").addEventListener("click",()=>void clearEffects());
  $("hit-effects").addEventListener("click",()=>void hitEffects());
  OBR.scene.items.onChange(()=>{void refresh();});
