@@ -87,7 +87,7 @@ function Tracker(){
    const startX=center.x-((turnDice.length-1)*gap)/2;
    const diceItems=turnDice.map((die,i)=>buildLabel()
     .plainText(DIE_FACES[die.roll-1])
-    .width(48).height(48).padding(0).fontSize(46).fontWeight(800).lineHeight(48)
+    .width(48).height(48).padding(0).fontSize(34).fontWeight(800).lineHeight(48)
     .textAlign("CENTER").textAlignVertical("MIDDLE")
     .fillColor(die.textColor).backgroundColor(die.color).backgroundOpacity(1).cornerRadius(7)
     .position({x:startX+i*gap,y:center.y+bounds.height/2+48})
