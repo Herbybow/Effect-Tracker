@@ -1,8 +1,8 @@
 import OBR, { buildShape, buildImage, buildImageUpload, buildLabel } from "@owlbear-rodeo/sdk";
 const NS="com.effect-tracker/data";
 const INIT_NS="rodeo.owlbear.initiative-tracker/metadata";
-const EFFECT_TYPES={bleed:{label:"Bleed",icon:"Bleed.svg",color:"blood"},poison:{label:"Poison",icon:"Poison.svg",color:"poison"},fire:{label:"Fire",icon:"Fire.svg",color:"fire"},regen:{label:"Regen",icon:"Regen.svg",color:"regen"},mark:{label:"Mark",icon:"Mark.svg",color:"mark"},horror:{label:"Horror",icon:"Horror.svg",color:"horror"},shield:{label:"Shield",icon:"Shield.svg",color:"shield"}};
-const VALUE_EFFECTS={stunt:{label:"Stunt",icon:"Stunt.svg",color:"stunt"},root:{label:"Root",icon:"Root.svg",color:"root"},blind:{label:"Blind",icon:"Blind.svg",color:"blind"},silent:{label:"Silent",icon:"Silent.svg",color:"silent"},gel:{label:"Gel",icon:"Gel.svg",color:"gel"}};
+const EFFECT_TYPES={bleed:{label:"Bleed",icon:"Bleed.svg",color:"blood"},poison:{label:"Poison",icon:"Poison.svg",color:"poison"},fire:{label:"Fire",icon:"Fire.svg",color:"fire"},regen:{label:"Regen",icon:"Regen.svg",color:"regen"},mark:{label:"Mark",icon:"Mark.svg",color:"mark"},horror:{label:"Horror",icon:"Horror.svg",color:"horror"},shield:{label:"Shield",icon:"Shield.svg",color:"shield"},toucher:{label:"Toucher",icon:"Toucher.svg",color:"toucher"},critique:{label:"Critique",icon:"Critique.svg",color:"critique"},resistance:{label:"Résistance",icon:"Résistance.svg",color:"resistance"}};
+const VALUE_EFFECTS={stunt:{label:"Stunt",icon:"Stunt.svg",color:"stunt"},root:{label:"Root",icon:"Root.svg",color:"root"},blind:{label:"Blind",icon:"Blind.svg",color:"blind"},silent:{label:"Silent",icon:"Silent.svg",color:"silent"},gel:{label:"Gel",icon:"Gel.svg",color:"gel"},esquive:{label:"Esquive",icon:"Esquive.svg",color:"esquive"}};
 let characters=[], activeId=null, selectedId=null, busy=false, queued=false, personalData={};
 const $=id=>document.getElementById(id);
 const isCharacter=item=>item?.layer==="CHARACTER"&&item?.type==="IMAGE";
@@ -33,10 +33,11 @@ function render(){
  const activeEffects=item?effectsOf(item):[];
  const values=item?valueEffectsOf(item).filter(e=>e.value>0):[];
  const firstEffects=activeEffects.filter(e=>["bleed","poison","fire","regen"].includes(e.type));
- const thirdEffects=activeEffects.filter(e=>["mark","horror","shield"].includes(e.type));
+ const thirdEffects=activeEffects.filter(e=>["mark","horror","shield","toucher","critique","resistance"].includes(e.type));
  const secondValues=values.filter(e=>["stunt","root","blind","silent"].includes(e.type));
- const thirdValues=values.filter(e=>e.type==="gel");
- const hasCurrent=firstEffects.length||secondValues.length||thirdEffects.length||thirdValues.length;
+ const thirdValues=values.filter(e=>["gel","esquive"].includes(e.type));
+ const fourthEffects=activeEffects.filter(e=>["toucher","critique","resistance"].includes(e.type));
+ const hasCurrent=firstEffects.length||secondValues.length||thirdEffects.length||thirdValues.length||fourthEffects.length;
  current.className=hasCurrent?"current-list":"empty";
  if(!item)current.textContent="Assign a character to see its current effects.";
  else if(!hasCurrent)current.textContent="No Effect";
@@ -47,6 +48,7 @@ function render(){
   appendRow(firstEffects.map(effect=>({kind:"charge",effect})),"current-row-one");
   appendRow(secondValues.map(effect=>({kind:"value",effect})),"current-row-two");
   appendRow([...thirdValues.map(effect=>({kind:"value",effect})),...thirdEffects.map(effect=>({kind:"charge",effect}))],"current-row-three");
+  appendRow(fourthEffects.map(effect=>({kind:"charge",effect})),"current-row-four");
  }
  $("bleed-controls").hidden=!full;
  $("third-effect-controls").hidden=!full;
@@ -124,7 +126,7 @@ async function syncLocalEffectIcons(character=active()){
  const outerGap=bounds?bounds.height*0.10:0;
  const slotTop=bounds?bounds.min.y-outerGap-height*4:0;
  const left=bounds?bounds.min.x:0;
- const rowTypes=[["bleed","poison","fire","regen"],["stunt","root","blind","silent"],["gel","mark","horror","shield"]];
+ const rowTypes=[["bleed","poison","fire","regen"],["stunt","root","blind","silent"],["gel","mark","horror","shield"],["toucher","critique","resistance"]];
  const wanted=new Map();
  for(const type of activeTypes){
   const asset=assets[type];if(!asset?.url)continue;
@@ -227,7 +229,14 @@ async function addToInitiative(id){
 }
 async function clearEffects(){const item=active();if(!item){notify("Assign a character first.");return;}try{let changed=false;await update(item.id,d=>{d.effects??={};for(const type of ["bleed","poison","fire","regen","horror"]){const raw=d.effects[type],list=Array.isArray(raw)?raw:(raw&&typeof raw==="object"?[raw]:[]);const remaining=list.map(b=>{const charges=Math.max(0,Number(b.charges)||0);if(charges>0)changed=true;return {...b,charges:Math.max(0,charges-1)};}).filter(b=>b.charges>0);if(remaining.length)d.effects[type]=remaining;else delete d.effects[type];}const gel=Math.max(0,Number(d.effects.gel)||0);if(gel>0){d.effects.gel=gel-1;changed=true;}});if(!changed){notify("No active effect charges to clear.");return;}notify("Consumed one charge from each active effect. No damage was dealt.");await refresh();}catch(e){console.error(e);notify(`Could not clear effects: ${errorText(e)}`);}}
 async function setValueEffect(type,value){const item=active(),config=VALUE_EFFECTS[type];if(!item||!config)return;try{await update(item.id,d=>{d.effects[type]=value;});document.querySelectorAll(`.value-effect-column[data-effect="${type}"] button`).forEach(button=>button.classList.toggle("active",Number(button.dataset.value)===value&&value!==0));await refresh();}catch(e){console.error(e);notify(`Could not update ${config.label}: ${errorText(e)}`);}}
-async function hitEffects(){const item=active();if(!item){notify("Assign a character first.");return;}try{let changed=false;await update(item.id,d=>{d.effects??={};for(const type of ["stunt","gel"]){const value=Math.max(0,Number(d.effects[type])||0);if(value>0){d.effects[type]=Math.max(0,value-1);changed=true;}}for(const type of ["mark","shield"]){const raw=d.effects[type],list=Array.isArray(raw)?raw:(raw&&typeof raw==="object"?[raw]:[]);const remaining=list.map(b=>{const charges=Math.max(0,Number(b.charges)||0);if(charges>0)changed=true;return {...b,charges:Math.max(0,charges-1)};}).filter(b=>b.charges>0);if(remaining.length)d.effects[type]=remaining;else delete d.effects[type];}});if(!changed){notify("No Stunt, Gel, Mark or Shield to reduce.");return;}notify("Hit applied: Stunt/Gel power and Mark/Shield charges reduced by 1.");await refresh();}catch(e){console.error(e);notify(`Could not apply Hit: ${errorText(e)}`);}}
+async function applyModifier(type,charges){
+ const input=$("modifier-"+type),raw=String(input?.value??"").trim(),value=Number(raw),item=active(),config=EFFECT_TYPES[type];
+ if(!item){notify("Assign a character first.");return;}
+ if(raw===""||!Number.isInteger(value)||value< -100||value>100){notify("Enter a whole number between -100 and 100 first.");return;}
+ try{await update(item.id,d=>{d.effects??={};const list=Array.isArray(d.effects[type])?d.effects[type]:(d.effects[type]?[d.effects[type]]:[]);list.push({id:crypto.randomUUID(),power:value,charges,appliedAt:new Date().toISOString(),schemaVersion:2});d.effects[type]=list.filter(b=>Number(b.charges)>0);});if(input)input.value="";await refresh();}
+ catch(e){console.error(e);notify("Could not apply "+config.label+": "+errorText(e));}
+}
+async function hitEffects(){const item=active();if(!item){notify("Assign a character first.");return;}try{let changed=false;await update(item.id,d=>{d.effects??={};for(const type of ["stunt","gel","esquive"]){const value=Math.max(0,Number(d.effects[type])||0);if(value>0){d.effects[type]=Math.max(0,value-1);changed=true;}}for(const type of ["mark","shield"]){const raw=d.effects[type],list=Array.isArray(raw)?raw:(raw&&typeof raw==="object"?[raw]:[]);const remaining=list.map(b=>{const charges=Math.max(0,Number(b.charges)||0);if(charges>0)changed=true;return {...b,charges:Math.max(0,charges-1)};}).filter(b=>b.charges>0);if(remaining.length)d.effects[type]=remaining;else delete d.effects[type];}});if(!changed){notify("No Stunt, Gel, Mark or Shield to reduce.");return;}notify("Hit applied: Stunt/Gel power and Mark/Shield charges reduced by 1.");await refresh();}catch(e){console.error(e);notify(`Could not apply Hit: ${errorText(e)}`);}}
 async function applyEffect(type,power){const item=active(),config=EFFECT_TYPES[type];if(!item||!config){notify("Assign a character first.");return;}try{await update(item.id,d=>{const v=d.effects[type],list=Array.isArray(v)?v:(v&&typeof v==="object"?[v]:[]);list.push({id:crypto.randomUUID(),power,charges:3,appliedAt:new Date().toISOString(),schemaVersion:2});d.effects[type]=list.filter(b=>b.charges>0);});await refresh();}catch(e){console.error(e);notify(`Could not apply ${config.label}: ${errorText(e)}`);}}
 OBR.onReady(()=>{void(async()=>{try{
  await OBR.action.setHeight(1300);await OBR.action.setWidth(325);
@@ -240,6 +249,7 @@ $("assign-character").addEventListener("click",async()=>{const candidate=charact
  $("select-map-icons").addEventListener("click",()=>void selectBleedAttachment());
  $("clear-effects").addEventListener("click",()=>void clearEffects());
  $("hit-effects").addEventListener("click",()=>void hitEffects());
+ document.querySelectorAll(".modifier-charge").forEach(button=>button.addEventListener("click",()=>void applyModifier(button.dataset.effect,Number(button.dataset.charges))));
  OBR.scene.items.onChange(()=>{void refresh();});
  OBR.player.onChange(player=>{const picked=(player?.selection||[]).find(id=>characters.some(c=>c.id===id));if(picked){selectedId=picked;render();}});
  OBR.scene.onReadyChange(ready=>{if(ready)void refresh();});await refresh();
