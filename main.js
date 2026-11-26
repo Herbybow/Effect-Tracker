@@ -68,7 +68,11 @@ const EFFECT_HELP={
  gel:{title:"Gelé",description:"-5 Toucher et Critique par Gel actif, ainsi qu'un point de dégat par action.",color:"#33FFFF"},
  mark:{title:"Marqué",description:"Subit +1 dégât par Marque pour chaque dégât subit.",color:"#c45b91"},
  horror:{title:"Horreur",description:"Subit un mental par horreur au début de chaque tour.",color:"#9966cc"},
- shield:{title:"Protection",description:"Subit -1 dégât par Protection pour chaque dégât subit.",color:"#999999"}
+ shield:{title:"Protection",description:"Subit -1 dégât par Protection pour chaque dégât subit.",color:"#999999"},
+ toucher:{title:"Toucher",description:"Bonus ou malus temporaire au Toucher. Les charges disparaissent à la fin du tour.",color:"#f0c85a"},
+ critique:{title:"Critique",description:"Bonus ou malus temporaire au Critique. Les charges disparaissent à la fin du tour.",color:"#dc8cff"},
+ resistance:{title:"Résistance",description:"Bonus ou malus temporaire à la Résistance. Les charges disparaissent à la fin du tour.",color:"#8fc9a0"},
+ esquive:{title:"Esquive",description:"Modifie temporairement la valeur d'Esquive.",color:"#80c8ff"}
 };
 function showEffectHelp(type,anchor){
  const data=EFFECT_HELP[type],tip=$("effect-help");
@@ -84,7 +88,7 @@ function showEffectHelp(type,anchor){
  tip.style.top=Math.min(window.innerHeight- tip.offsetHeight-8,rect.bottom+8)+"px";
 }
 
-const MAP_ICON_TYPES=["bleed","poison","fire","regen","stunt","root","blind","silent","gel","mark","horror","shield"];
+const MAP_ICON_TYPES=["bleed","poison","fire","regen","stunt","root","blind","silent","gel","mark","horror","shield","toucher","critique","resistance","esquive"];
 async function selectBleedAttachment(){
  const button=$("select-map-icons");if(button)button.disabled=true;
  try{
