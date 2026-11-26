@@ -33,7 +33,7 @@ function render(){
  const activeEffects=item?effectsOf(item):[];
  const values=item?valueEffectsOf(item).filter(e=>e.value>0):[];
  const firstEffects=activeEffects.filter(e=>["bleed","poison","fire","regen"].includes(e.type));
- const thirdEffects=activeEffects.filter(e=>["mark","horror","shield","toucher","critique","resistance"].includes(e.type));
+ const thirdEffects=activeEffects.filter(e=>["mark","horror","shield"].includes(e.type));
  const secondValues=values.filter(e=>["stunt","root","blind","silent"].includes(e.type));
  const thirdValues=values.filter(e=>["gel","esquive"].includes(e.type));
  const fourthEffects=activeEffects.filter(e=>["toucher","critique","resistance"].includes(e.type));
@@ -70,10 +70,10 @@ const EFFECT_HELP={
  mark:{title:"Marqué",description:"Subit +1 dégât par Marque pour chaque dégât subit.",color:"#c45b91"},
  horror:{title:"Horreur",description:"Subit un mental par horreur au début de chaque tour.",color:"#9966cc"},
  shield:{title:"Protection",description:"Subit -1 dégât par Protection pour chaque dégât subit.",color:"#999999"},
- toucher:{title:"Toucher",description:"Bonus ou malus temporaire au Toucher. Les charges disparaissent à la fin du tour.",color:"#f0c85a"},
- critique:{title:"Critique",description:"Bonus ou malus temporaire au Critique. Les charges disparaissent à la fin du tour.",color:"#dc8cff"},
- resistance:{title:"Résistance",description:"Bonus ou malus temporaire à la Résistance. Les charges disparaissent à la fin du tour.",color:"#8fc9a0"},
- esquive:{title:"Esquive",description:"Modifie temporairement la valeur d'Esquive.",color:"#80c8ff"}
+ toucher:{title:"Toucher",description:"Bonus ou malus temporaire au Toucher. Les charges disparaissent à la fin du tour.",color:"#3399CC"},
+ critique:{title:"Critique",description:"Bonus ou malus temporaire au Critique. Les charges disparaissent à la fin du tour.",color:"#CCCC99"},
+ resistance:{title:"Résistance",description:"Bonus ou malus temporaire à la Résistance. Les charges disparaissent à la fin du tour.",color:"#CC6666"},
+ esquive:{title:"Esquive",description:"Modifie temporairement la valeur d'Esquive.",color:"#669966"}
 };
 function showEffectHelp(type,anchor){
  const data=EFFECT_HELP[type],tip=$("effect-help");
@@ -113,7 +113,7 @@ async function selectBleedAttachment(){
   }else if(missing.length){
    notify(imported+" icon(s) saved. Still missing: "+missing.join(", ")+". You can select the remaining icons with this button.");
   }else{
-   notify("All 12 effect icons saved to your player profile. They will be used automatically from now on.");
+   notify("All effect icons saved to your player profile. They will be used automatically from now on.");
   }
  }catch(error){console.error(error);notify("Attachment selection failed: "+errorText(error));}
  finally{if(button)button.disabled=false;}
