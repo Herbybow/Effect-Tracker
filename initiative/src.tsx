@@ -87,9 +87,9 @@ function Tracker(){
    const startX=center.x-((turnDice.length-1)*gap)/2;
    const diceItems=turnDice.map((die,i)=>buildLabel()
     .plainText(DIE_FACES[die.roll-1])
-    .width(64).height(64).fontSize(48).fontWeight(800)
+    .width(32).height(32).padding(0).fontSize(24).fontWeight(800)
     .textAlign("CENTER").textAlignVertical("MIDDLE")
-    .fillColor(die.textColor).backgroundColor(die.color).backgroundOpacity(1).cornerRadius(9)
+    .fillColor(die.textColor).backgroundColor(die.color).backgroundOpacity(1)
     .position({x:startX+i*gap,y:center.y+bounds.height/2+48})
     .layer("ATTACHMENT").attachedTo(next.id).locked(true).disableHit(true)
     .name(die.type+" D6: "+die.roll)
