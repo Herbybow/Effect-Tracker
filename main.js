@@ -82,37 +82,76 @@ function showEffectHelp(type,anchor){
  tip.style.top=Math.min(window.innerHeight- tip.offsetHeight-8,rect.bottom+8)+"px";
 }
 
+const MAP_ICON_TYPES=["bleed","poison","fire","regen","stunt","root","blind","silent","gel","mark","horror","shield"];
 async function selectBleedAttachment(){
  const button=$("select-map-icons");if(button)button.disabled=true;
  try{
-  const downloads=await OBR.assets.downloadImages(false,"Bleed","ATTACHMENT");
-  const selected=downloads?.[0];
-  if(!selected?.image?.url)throw new Error("No usable image was returned. Select the Bleed PNG from your Attachments.");
+  const downloads=await OBR.assets.downloadImages(true,".png","ATTACHMENT");
+  const assets={};
+  for(const download of downloads||[]){
+   const normalized=String(download.name||"").toLowerCase().replace(/\\.png$/i,"");
+   if(MAP_ICON_TYPES.includes(normalized)&&download.image?.url)assets[normalized]=download.image;
+  }
+  const missing=MAP_ICON_TYPES.filter(type=>!assets[type]);
+  if(missing.length)throw new Error("Missing attachments: "+missing.join(", ")+". Select all 12 Effect Tracker PNG files in the Attachment picker.");
   const meta=await OBR.player.getMetadata(),data=JSON.parse(JSON.stringify(meta?.[NS]||{}));
-  data.mapIconAssets={...(data.mapIconAssets||{}),bleed:selected.image};
+  data.mapIconAssets=assets;
   await OBR.player.setMetadata({[NS]:data});personalData=data;
-  await syncLocalBleedIcon();
-  notify("Bleed attachment saved. Its local icon will appear only while Bleed is active.");
- }catch(error){console.error(error);notify("Bleed attachment selection failed: "+errorText(error));}
+  const character=active();await syncLocalEffectIcons(character);
+  notify("All 12 effect icons saved to your player profile. They will be used automatically from now on.");
+ }catch(error){console.error(error);notify("Attachment selection failed: "+errorText(error));}
  finally{if(button)button.disabled=false;}
 }
-async function syncLocalBleedIcon(character=active()){
+async function syncLocalEffectIcons(character=active()){
  const existing=await OBR.scene.local.getItems(item=>item.metadata?.[NS]?.effectTrackerAssetTest===true);
- const hasBleed=!!character&&effectsOf(character).some(effect=>effect.type==="bleed"&&effect.charges>0);
- const asset=personalData?.mapIconAssets?.bleed;
- if(!hasBleed||!asset?.url){
-  if(existing.length)await OBR.scene.local.deleteItems(existing.map(item=>item.id));
-  return;
+ const assets=personalData?.mapIconAssets||{};
+ const activeTypes=new Set();
+ if(character){
+  for(const effect of effectsOf(character))if(effect.charges>0)activeTypes.add(effect.type);
+  for(const effect of valueEffectsOf(character))if(effect.value>0)activeTypes.add(effect.type);
  }
- const bounds=await OBR.scene.items.getItemBounds([character.id]);
- const slotHeight=Math.max(10,bounds.height*0.14),outerGap=bounds.height*0.10;
- const slotTop=bounds.min.y-outerGap-slotHeight*4;
- const size=Math.max(0.001,Math.min(slotHeight*0.02,bounds.width/4*0.02));
- if(existing.length)await OBR.scene.local.deleteItems(existing.map(item=>item.id));
- const icon=buildImage(asset,{offset:{x:0,y:0},dpi:256}).scale({x:size,y:size})
-  .position({x:bounds.min.x+bounds.width*0.5625,y:slotTop}).layer("ATTACHMENT").attachedTo(character.id)
-  .disableHit(true).locked(true).metadata({[NS]:{effectTrackerAssetTest:true,characterId:character.id}}).build();
- await OBR.scene.local.addItems([icon]);
+ const bounds=character?await OBR.scene.items.getItemBounds([character.id]):null;
+ const height=bounds?Math.max(10,bounds.height*0.14):0;
+ const outerGap=bounds?bounds.height*0.10:0;
+ const slotTop=bounds?bounds.min.y-outerGap-height*4:0;
+ const left=bounds?bounds.min.x:0;
+ const rowTypes=[["bleed","poison","fire","regen"],["stunt","root","blind","silent"],["gel","mark","horror","shield"]];
+ const wanted=new Map();
+ for(const type of activeTypes){
+  const asset=assets[type];if(!asset?.url)continue;
+  const row=rowTypes.findIndex(types=>types.includes(type));if(row<0)continue;
+  const index=rowTypes[row].indexOf(type);
+  const size=Math.max(0.001,Math.min(height*0.02,bounds.width/4*0.02));
+  wanted.set(type,{asset,size,position:{x:left+bounds.width*(index+0.5)/4,y:slotTop+height*(row+0.5)}});
+ }
+ const existingByType=new Map();
+ for(const item of existing){
+  const meta=item.metadata?.[NS]?.effectTrackerAssetTest;
+  if(meta?.characterId!==character?.id||!wanted.has(meta?.type)){
+   await OBR.scene.local.deleteItems([item.id]);continue;
+  }
+  existingByType.set(meta.type,item);
+ }
+ const additions=[],updates=[];
+ for(const [type,geometry] of wanted){
+  const old=existingByType.get(type);
+  if(old){
+   const p=old.position||{},sc=old.scale||{};
+   if(Math.abs((p.x??0)-geometry.position.x)>0.01||Math.abs((p.y??0)-geometry.position.y)>0.01||Math.abs((sc.x??0)-geometry.size)>0.01||Math.abs((sc.y??0)-geometry.size)>0.01){
+    updates.push({id:old.id,position:geometry.position,size:geometry.size});
+   }
+   continue;
+  }
+  const icon=buildImage(geometry.asset,{offset:{x:0,y:0},dpi:256}).scale({x:geometry.size,y:geometry.size})
+   .position(geometry.position).layer("ATTACHMENT").attachedTo(character.id).disableHit(true).locked(true)
+   .metadata({[NS]:{effectTrackerAssetTest:{characterId:character.id,type}}}).build();
+  additions.push(icon);
+ }
+ if(updates.length)await OBR.scene.local.updateItems(updates.map(x=>x.id),items=>items.map(item=>{
+  const update=updates.find(x=>x.id===item.id);
+  return update?{...item,position:update.position,scale:{x:update.size,y:update.size}}:item;
+ }));
+ if(additions.length)await OBR.scene.local.addItems(additions);
 }
 async function migratePersonalEffects(){
  const byCharacter=personalData?.effectsByCharacter||{};
@@ -181,9 +220,9 @@ async function ensureEffectSlots(character){
  if(updates.length)await OBR.scene.items.updateItems(updates.map(x=>x.id),items=>items.map(item=>{const u=updates.find(x=>x.id===item.id);return u?{...item,position:u.geometry.position,scale:{x:u.geometry.iconSize,y:u.geometry.iconSize}}:item;}));
  if(icons.length)await OBR.scene.items.addItems(icons);
 }
-async function refresh(){if(busy){queued=true;return;}busy=true;try{characters=await OBR.scene.items.getItems(isCharacter);const meta=await OBR.player.getMetadata();personalData=meta?.[NS]||{};await migratePersonalEffects();const preferred=personalData.activeCharacterId;activeId=characters.some(i=>i.id===preferred)?preferred:null;if(activeId){const assigned=characters.find(i=>i.id===activeId);if(assigned){await ensureEffectSlots(assigned);await syncLocalBleedIcon(assigned);}}else{await syncLocalBleedIcon(null);}if(!selectedId||!characters.some(i=>i.id===selectedId))selectedId=((await OBR.player.getSelection())||[]).find(id=>characters.some(i=>i.id===id))||null;render();}catch(e){console.error(e);notify(`Could not load characters: ${errorText(e)}`);}finally{busy=false;if(queued){queued=false;void refresh();}}}
+async function refresh(){if(busy){queued=true;return;}busy=true;try{characters=await OBR.scene.items.getItems(isCharacter);const meta=await OBR.player.getMetadata();personalData=meta?.[NS]||{};await migratePersonalEffects();const preferred=personalData.activeCharacterId;activeId=characters.some(i=>i.id===preferred)?preferred:null;if(activeId){const assigned=characters.find(i=>i.id===activeId);if(assigned){await ensureEffectSlots(assigned);await syncLocalEffectIcons(assigned);}}else{await syncLocalEffectIcons(null);}if(!selectedId||!characters.some(i=>i.id===selectedId))selectedId=((await OBR.player.getSelection())||[]).find(id=>characters.some(i=>i.id===id))||null;render();}catch(e){console.error(e);notify(`Could not load characters: ${errorText(e)}`);}finally{busy=false;if(queued){queued=false;void refresh();}}}
 async function update(id,mutate){await OBR.scene.items.updateItems([id],items=>{for(const item of items){const d=JSON.parse(JSON.stringify(item.metadata?.[NS]||{}));d.effects??={};mutate(d);item.metadata={...item.metadata,[NS]:d};}});}
-async function setActive(id){const meta=await OBR.player.getMetadata(),data=JSON.parse(JSON.stringify(meta?.[NS]||{}));data.activeCharacterId=id;delete data.effectsByCharacter;await OBR.player.setMetadata({[NS]:data});personalData=data;activeId=id;selectedId=id;const assigned=characters.find(i=>i.id===id);if(assigned)await ensureEffectSlots(assigned);await syncLocalBleedIcon(assigned);render();}
+async function setActive(id){const meta=await OBR.player.getMetadata(),data=JSON.parse(JSON.stringify(meta?.[NS]||{}));data.activeCharacterId=id;delete data.effectsByCharacter;await OBR.player.setMetadata({[NS]:data});personalData=data;activeId=id;selectedId=id;const assigned=characters.find(i=>i.id===id);if(assigned)await ensureEffectSlots(assigned);await syncLocalEffectIcons(assigned);render();}
 async function addToInitiative(id){
  const item=characters.find(c=>c.id===id);if(!item){notify("Select a character token on the map first.");return;}
  try{await OBR.scene.items.updateItems([id],items=>{for(const sceneItem of items){if(sceneItem.metadata?.[INIT_NS]===undefined){sceneItem.metadata={...sceneItem.metadata,[INIT_NS]:{count:"0",active:false}};}}});notify(`${item.name||"Character"} added to Initiative.`);await refresh();}
