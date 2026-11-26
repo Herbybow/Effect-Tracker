@@ -86,7 +86,7 @@ const MAP_ICON_TYPES=["bleed","poison","fire","regen","stunt","root","blind","si
 async function selectBleedAttachment(){
  const button=$("select-map-icons");if(button)button.disabled=true;
  try{
-  const downloads=await OBR.assets.downloadImages(true,"Bleed","ATTACHMENT");
+  const downloads=await OBR.assets.downloadImages(true,"png","ATTACHMENT");
   const meta=await OBR.player.getMetadata(),data=JSON.parse(JSON.stringify(meta?.[NS]||{}));
   const assets={...(data.mapIconAssets||{})};
   let imported=0;
