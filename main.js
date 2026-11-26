@@ -200,34 +200,14 @@ async function ensureEffectSlots(character){
  }
  if(shapes.length)await OBR.scene.items.addItems(shapes);
 
- const rowTypes=[
-  ["bleed","poison","fire","regen"],
-  ["stunt","root","blind","silent"],
-  ["gel","mark","horror","shield"]
- ];
- const chargeTypes=new Set(effectsOf(character).map(effect=>effect.type));
- const values=valueEffectsOf(character);
- const activeTypes=new Set([...chargeTypes,...values.filter(effect=>effect.value>0).map(effect=>effect.type)]);
- const oldMarkers=await OBR.scene.items.getItems(item=>item.metadata?.[NS]?.effectTrackerIcon?.characterId===character.id);
- const oldSvgMarkers=await OBR.scene.items.getItems(item=>item.metadata?.[NS]?.effectTrackerSvg?.characterId===character.id);
- const existingMarkers=await OBR.scene.items.getItems(item=>item.metadata?.[NS]?.effectTrackerPng?.characterId===character.id);
- const existingByType=new Map(existingMarkers.map(item=>[item.metadata[NS].effectTrackerPng.type,item]));
- const staleIds=[...oldMarkers,...oldSvgMarkers,...existingMarkers.filter(item=>!activeTypes.has(item.metadata[NS].effectTrackerPng.type))].map(item=>item.id);
- if(staleIds.length)await OBR.scene.items.deleteItems(staleIds);
- const geometryFor=type=>{const row=rowTypes.findIndex(types=>types.includes(type));if(row<0)return null;const index=rowTypes[row].indexOf(type);const iconSize=Math.max(0.001,Math.min(height*0.02,width/4*0.02));return {row,index,iconSize,position:{x:left+width*(index+0.5)/4,y:positionFor(row).y}};};
- const icons=[],updates=[];
- for(const type of activeTypes){
-  const geometry=geometryFor(type);if(!geometry)continue;
-  const old=existingByType.get(type);
-  if(old){const p=old.position||{},sc=old.scale||{};if(Math.abs((p.x??0)-geometry.position.x)>0.01||Math.abs((p.y??0)-geometry.position.y)>0.01||Math.abs((sc.x??0)-geometry.iconSize)>0.01||Math.abs((sc.y??0)-geometry.iconSize)>0.01)updates.push({id:old.id,geometry});continue;}
-  const iconName=(EFFECT_TYPES[type]?.icon||VALUE_EFFECTS[type]?.icon)?.replace(/\.svg$/i,".png");if(!iconName)continue;
-  const icon=buildImage({width:256,height:256,mime:"image/png",url:"https://raw.githubusercontent.com/Herbybow/Effect-Tracker/main/public/PNG/"+iconName},{offset:{x:0,y:0},dpi:256})
-   .scale({x:geometry.iconSize,y:geometry.iconSize}).position(geometry.position).layer("ATTACHMENT").attachedTo(character.id).disableHit(true).locked(true)
-   .metadata({[NS]:{effectTrackerPng:{characterId:character.id,type,row:geometry.row}}}).build();
-  icons.push(icon);
- }
- if(updates.length)await OBR.scene.items.updateItems(updates.map(x=>x.id),items=>items.map(item=>{const u=updates.find(x=>x.id===item.id);return u?{...item,position:u.geometry.position,scale:{x:u.geometry.iconSize,y:u.geometry.iconSize}}:item;}));
- if(icons.length)await OBR.scene.items.addItems(icons);
+ // Remove legacy shared map icons. Effect icons are now created only in the
+ // player's local scene from their imported Attachment assets.
+ const sharedIcons=await OBR.scene.items.getItems(item=>
+  item.metadata?.[NS]?.effectTrackerPng||
+  item.metadata?.[NS]?.effectTrackerIcon||
+  item.metadata?.[NS]?.effectTrackerSvg
+ );
+ if(sharedIcons.length)await OBR.scene.items.deleteItems(sharedIcons.map(item=>item.id));
 }
 async function refresh(){if(busy){queued=true;return;}busy=true;try{characters=await OBR.scene.items.getItems(isCharacter);const meta=await OBR.player.getMetadata();personalData=meta?.[NS]||{};await migratePersonalEffects();const preferred=personalData.activeCharacterId;activeId=characters.some(i=>i.id===preferred)?preferred:null;if(activeId){const assigned=characters.find(i=>i.id===activeId);if(assigned){await ensureEffectSlots(assigned);await syncLocalEffectIcons(assigned);}}else{await syncLocalEffectIcons(null);}if(!selectedId||!characters.some(i=>i.id===selectedId))selectedId=((await OBR.player.getSelection())||[]).find(id=>characters.some(i=>i.id===id))||null;render();}catch(e){console.error(e);notify(`Could not load characters: ${errorText(e)}`);}finally{busy=false;if(queued){queued=false;void refresh();}}}
 async function update(id,mutate){await OBR.scene.items.updateItems([id],items=>{for(const item of items){const d=JSON.parse(JSON.stringify(item.metadata?.[NS]||{}));d.effects??={};mutate(d);item.metadata={...item.metadata,[NS]:d};}});}
