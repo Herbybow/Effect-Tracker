@@ -23,6 +23,7 @@ body{color:#fff}
 .initiative-regen{color:#FFD484!important}
 
 .initiative-value{font-weight:800!important;font-size:.85rem!important;line-height:1!important}
+.initiative-toucher{color:#3399CC!important}.initiative-critique{color:#CCCC99!important}.initiative-resistance{color:#CC6666!important}.initiative-esquive{color:#669966!important}
 .initiative-stunt{color:#FFCC00!important}
 .initiative-root{color:#d97745!important}
 .initiative-blind{color:#FFFFFF!important}
