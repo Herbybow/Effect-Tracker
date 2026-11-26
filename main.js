@@ -12,7 +12,7 @@ function effectsOf(item){
  const effects=item?.metadata?.[NS]?.effects||{};
  return Object.entries(EFFECT_TYPES).flatMap(([type,config])=>{
   const raw=effects[type];const list=Array.isArray(raw)?raw:(raw&&typeof raw==="object"?[raw]:[]);
-  return list.filter(b=>Number(b.charges)>0).map(b=>({id:b.id||"legacy",power:Number(b.power)||Number(b.damage)||1,charges:Math.max(0,Number(b.charges)||0),type,...config}));
+  return list.filter(b=>Number(b.charges)>0).map(b=>({id:b.id||"legacy",power:Number.isFinite(Number(b.power))?Number(b.power):(Number(b.damage)||1),charges:Math.max(0,Number(b.charges)||0),type,...config}));
  });
 }
 function valueEffectsOf(item){const data=item?.metadata?.[NS]?.effects||{};return Object.entries(VALUE_EFFECTS).map(([type,config])=>({type,...config,value:Math.max(0,Math.min(9,Number(data[type])||0))}));}
@@ -99,7 +99,7 @@ async function selectBleedAttachment(){
   let imported=0;
   for(const download of downloads||[]){
    let normalized=String(download.name||"").trim().toLowerCase();
-   normalized=normalized.replace(/^effect tracker\s*-\s*/,"").replace(/\.png$/i,"").trim();
+   normalized=normalized.replace(/^effect tracker\s*-\s*/,"").replace(/\.png$/i,"").trim().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
    if(MAP_ICON_TYPES.includes(normalized)&&download.image?.url){
     assets[normalized]=download.image;imported++;
    }
