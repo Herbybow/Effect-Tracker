@@ -131,7 +131,7 @@ async function syncLocalEffectIcons(character=active()){
   const row=rowTypes.findIndex(types=>types.includes(type));if(row<0)continue;
   const index=rowTypes[row].indexOf(type);
   const size=Math.max(0.001,Math.min(height*0.02,bounds.width/4*0.02));
-  wanted.set(type,{asset,size,position:{x:left+bounds.width*(type==="bleed"?0.1875:(index+0.5)/4),y:slotTop+height*(row+0.7)}});
+  wanted.set(type,{asset,size,position:{x:left+bounds.width*((index+0.5)/4-0.125),y:slotTop+height*(row+0.7)}});
  }
  const existingByType=new Map();
  for(const item of existing){
@@ -174,31 +174,9 @@ async function migratePersonalEffects(){
 }
 
 async function ensureEffectSlots(character){
+ const placeholders=await OBR.scene.items.getItems(item=>!!item.metadata?.[NS]?.effectTrackerSlot);
+ if(placeholders.length)await OBR.scene.items.deleteItems(placeholders.map(item=>item.id));
  if(!character)return;
- const bounds=await OBR.scene.items.getItemBounds([character.id]);
- const existing=await OBR.scene.items.getItems(item=>item.metadata?.[NS]?.effectTrackerSlot?.characterId===character.id);
- const width=bounds.width,height=Math.max(10,bounds.height*0.14),gap=0,outerGap=bounds.height*0.10;
- const totalHeight=height*4+gap*3,left=bounds.center.x-width,centerY=bounds.min.y-outerGap-totalHeight/2;
- const colors=["#e36b86","#ffcc00","#33ffff","#999999"];
- const labels=["Bleed, Poison, Fire, Regen","Stunt, Root, Blind, Silent","Gel, Mark, Horror, Shield","Future effects"];
- const byIndex=new Map(existing.map(item=>[item.metadata[NS].effectTrackerSlot.index,item]));
- const positionFor=index=>({x:left+width/2,y:centerY-totalHeight/2+height/2+index*(height+gap)});
- const slotsNeedingUpdate=existing.filter(item=>{
-  const index=item.metadata?.[NS]?.effectTrackerSlot?.index,p=positionFor(index);
-  return Math.abs((item.width||0)-width)>0.01||Math.abs((item.height||0)-height)>0.01||
-   Math.abs((item.position?.x??0)-p.x)>0.01||Math.abs((item.position?.y??0)-p.y)>0.01;
- });
- if(slotsNeedingUpdate.length)await OBR.scene.items.updateItems(slotsNeedingUpdate.map(item=>item.id),items=>items.map(item=>{
-  const index=item.metadata?.[NS]?.effectTrackerSlot?.index;
-  return {...item,width,height,position:positionFor(index)};
- }));
- const shapes=[];
- for(let index=0;index<4;index++){
-  if(byIndex.has(index))continue;
-  const shape=buildShape().name(`Effect Tracker Slot ${index+1}: ${labels[index]}`).shapeType("RECTANGLE").width(width).height(height).position(positionFor(index)).fillColor(colors[index]).fillOpacity(0.12).strokeColor(colors[index]).strokeOpacity(0.95).strokeWidth(2).attachedTo(character.id).layer("ATTACHMENT").disableHit(true).locked(true).metadata({[NS]:{effectTrackerSlot:{characterId:character.id,index}}}).build();
-  shapes.push(shape);
- }
- if(shapes.length)await OBR.scene.items.addItems(shapes);
 
  // Remove legacy shared map icons. Effect icons are now created only in the
  // player's local scene from their imported Attachment assets.
