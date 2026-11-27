@@ -131,7 +131,7 @@ async function syncLocalEffectIcons(character=active()){
  const outerGap=bounds?bounds.height*0.10:0;
  const slotTop=bounds?bounds.min.y-outerGap-height*4:0;
  const left=bounds?bounds.min.x:0;
- const rowTypes=[["bleed","poison","fire","regen"],["stunt","root","blind","silent"],["gel","mark","horror","shield"],["toucher","critique","resistance"]];
+ const rowTypes=[["bleed","poison","fire","regen"],["stunt","root","blind","silent"],["gel","mark","horror","shield"],["toucher","critique","resistance","esquive"]];
  const wanted=new Map();
  for(const type of activeTypes){
   const asset=assets[type];if(!asset?.url)continue;
