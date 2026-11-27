@@ -35,7 +35,7 @@ function render(){
  const firstEffects=activeEffects.filter(e=>["bleed","poison","fire","regen"].includes(e.type));
  const thirdEffects=activeEffects.filter(e=>["mark","horror","shield"].includes(e.type));
  const secondValues=values.filter(e=>["stunt","root","blind","silent"].includes(e.type));
- const thirdValues=values.filter(e=>["gel","esquive"].includes(e.type));
+ const thirdValues=values.filter(e=>e.type==="gel");
  const fourthEffects=activeEffects.filter(e=>["toucher","critique","resistance"].includes(e.type));
  const fourthValues=values.filter(e=>e.type==="esquive");
  const hasCurrent=firstEffects.length||secondValues.length||thirdEffects.length||thirdValues.length||fourthEffects.length||fourthValues.length;
