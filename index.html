@@ -81,10 +81,7 @@
         <div class="effect-column effect-shield"><img class="drop" src="./effects/Shield.svg" alt="Shield"/><div class="tiers"><button data-effect="shield" data-tier="1">3×1</button><button data-effect="shield" data-tier="2">3×2</button><button data-effect="shield" data-tier="3">3×3</button><button data-effect="shield" data-tier="4">3×4</button><button data-effect="shield" data-tier="5">3×5</button></div></div>
       </div>
     
-    </div>
-
-    <section id="modifier-board" class="panel modifier-board">
-      <div class="section-title"><h2>Modifiers</h2></div>
+    <section id="modifier-board" class="modifier-board">
       <div class="modifier-grid">
         <div class="modifier-column" data-effect="toucher"><img class="drop" src="./effects/Toucher.svg" alt="Toucher"/><input id="modifier-toucher" type="number" min="-100" max="100" step="10" placeholder="−100 to 100"/><div><button class="modifier-charge" data-effect="toucher" data-charges="1">1</button><button class="modifier-charge" data-effect="toucher" data-charges="2">2</button><button class="modifier-charge" data-effect="toucher" data-charges="3">3</button></div></div>
         <div class="modifier-column" data-effect="critique"><img class="drop" src="./effects/Critique.svg" alt="Critique"/><input id="modifier-critique" type="number" min="-100" max="100" step="5" placeholder="−100 to 100"/><div><button class="modifier-charge" data-effect="critique" data-charges="1">1</button><button class="modifier-charge" data-effect="critique" data-charges="2">2</button><button class="modifier-charge" data-effect="critique" data-charges="3">3</button></div></div>
@@ -105,7 +102,7 @@
     <div id="toast" role="status" aria-live="polite"></div>
   </main>
   <script type="module">
-    import("./main.js?rev=20261127-v016-layout2").catch((error) => {
+    import("./main.js?rev=20261127-v016-currentrow").catch((error) => {
       console.error("Effect Tracker module failed to load:", error);
     });
   </script>
