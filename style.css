@@ -135,7 +135,7 @@
 
 /* Palette refinements requested for the Current panel */
 .effect-horror .tiers button{color:#b9a9ed}
-.effect-toucher,.effect-critique,.effect-resistance{background:#302b35;border-color:#555}
+.effect-toucher{background:#302b35;border-color:#3399CC}.effect-critique{background:#302b35;border-color:#CCCC99}.effect-resistance{background:#302b35;border-color:#CC6666}
 .value-stunt{background:#403600}
 .value-root{background:#40200f}
 .value-blind{background:#383838}
