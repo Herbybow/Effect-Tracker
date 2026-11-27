@@ -88,9 +88,9 @@
     <section id="modifier-board" class="panel modifier-board">
       <div class="section-title"><h2>Modifiers</h2></div>
       <div class="modifier-grid">
-        <div class="modifier-column" data-effect="toucher"><img class="drop" src="./effects/Toucher.svg" alt="Toucher"/><input id="modifier-toucher" type="text" inputmode="decimal" placeholder="−100 to 100"/><div><button class="modifier-charge" data-effect="toucher" data-charges="1">1</button><button class="modifier-charge" data-effect="toucher" data-charges="2">2</button><button class="modifier-charge" data-effect="toucher" data-charges="3">3</button></div></div>
-        <div class="modifier-column" data-effect="critique"><img class="drop" src="./effects/Critique.svg" alt="Critique"/><input id="modifier-critique" type="number" min="-100" max="100" step="1" placeholder="−100 to 100"/><div><button class="modifier-charge" data-effect="critique" data-charges="1">1</button><button class="modifier-charge" data-effect="critique" data-charges="2">2</button><button class="modifier-charge" data-effect="critique" data-charges="3">3</button></div></div>
-        <div class="modifier-column" data-effect="resistance"><img class="drop" src="./effects/Résistance.svg" alt="Résistance"/><input id="modifier-resistance" type="number" min="-100" max="100" step="1" placeholder="−100 to 100"/><div><button class="modifier-charge" data-effect="resistance" data-charges="1">1</button><button class="modifier-charge" data-effect="resistance" data-charges="2">2</button><button class="modifier-charge" data-effect="resistance" data-charges="3">3</button></div></div>
+        <div class="modifier-column" data-effect="toucher"><img class="drop" src="./effects/Toucher.svg" alt="Toucher"/><input id="modifier-toucher" type="number" min="-100" max="100" step="10" placeholder="−100 to 100"/><div><button class="modifier-charge" data-effect="toucher" data-charges="1">1</button><button class="modifier-charge" data-effect="toucher" data-charges="2">2</button><button class="modifier-charge" data-effect="toucher" data-charges="3">3</button></div></div>
+        <div class="modifier-column" data-effect="critique"><img class="drop" src="./effects/Critique.svg" alt="Critique"/><input id="modifier-critique" type="number" min="-100" max="100" step="5" placeholder="−100 to 100"/><div><button class="modifier-charge" data-effect="critique" data-charges="1">1</button><button class="modifier-charge" data-effect="critique" data-charges="2">2</button><button class="modifier-charge" data-effect="critique" data-charges="3">3</button></div></div>
+        <div class="modifier-column" data-effect="resistance"><img class="drop" src="./effects/Résistance.svg" alt="Résistance"/><input id="modifier-resistance" type="number" min="-100" max="100" step="10" placeholder="−100 to 100"/><div><button class="modifier-charge" data-effect="resistance" data-charges="1">1</button><button class="modifier-charge" data-effect="resistance" data-charges="2">2</button><button class="modifier-charge" data-effect="resistance" data-charges="3">3</button></div></div>
       </div>
       <div class="value-effect-column" data-effect="esquive"><img class="drop" src="./effects/Esquive.svg" alt="Esquive"/><div class="value-buttons"><button data-effect="esquive" data-value="0">0</button><button data-effect="esquive" data-value="1">1</button><button data-effect="esquive" data-value="2">2</button><button data-effect="esquive" data-value="3">3</button><button data-effect="esquive" data-value="4">4</button><button data-effect="esquive" data-value="5">5</button><button data-effect="esquive" data-value="6">6</button><button data-effect="esquive" data-value="7">7</button><button data-effect="esquive" data-value="8">8</button><button data-effect="esquive" data-value="9">9</button></div></div>
     </section>
@@ -103,7 +103,7 @@
     <div id="toast" role="status" aria-live="polite"></div>
   </main>
   <script type="module">
-    import("./main.js?rev=20261127-v016-modifier-fixes").catch((error) => {
+    import("./main.js?rev=20261127-v016-turnfix").catch((error) => {
       console.error("Effect Tracker module failed to load:", error);
     });
   </script>
