@@ -66,10 +66,10 @@ const EFFECT_HELP={
  stunt:{title:"Assommé",description:"Empêche toute action tant que le Stunt est actif.",color:"#FFCC00"},
  root:{title:"Enchevêtré",description:"Empêche l'Esquive, -1 déplacement par Root actif.",color:"#d97745"},
  blind:{title:"Aveuglé",description:"-10 Toucher par Blind actif.",color:"#FFFFFF"},
- silent:{title:"Silencieux",description:"Empêche Sort, Techniques et Dialogues tant que le Silence est actif.",color:"#FF33FF"},
- gel:{title:"Gelé",description:"-5 Toucher et Critique par Gel actif, ainsi qu'un point de dégat par action.",color:"#33FFFF"},
+ silent:{title:"Silencieux",description:"Empêche Sort, Techniques et Dialogues tant que le Silence est actif.",color:"#f29cff"},
+ gel:{title:"Gelé",description:"-5 Toucher et Critique par Gel actif, ainsi qu'un point de dégat par action.",color:"#4ad5ff"},
  mark:{title:"Marqué",description:"Subit +1 dégât par Marque pour chaque dégât subit.",color:"#c45b91"},
- horror:{title:"Horreur",description:"Subit un mental par horreur au début de chaque tour.",color:"#9966cc"},
+ horror:{title:"Horreur",description:"Subit un mental par horreur au début de chaque tour.",color:"#503199"},
  shield:{title:"Protection",description:"Subit -1 dégât par Protection pour chaque dégât subit.",color:"#999999"},
  toucher:{title:"Toucher",description:"Bonus ou malus temporaire au Toucher. Les charges disparaissent à la fin du tour.",color:"#3399CC"},
  critique:{title:"Critique",description:"Bonus ou malus temporaire au Critique. Les charges disparaissent à la fin du tour.",color:"#CCCC99"},
@@ -184,7 +184,7 @@ async function syncLocalTurnDice(character=active()){
   if(meta?.characterId!==character?.id||!wanted.has(meta?.type)){await OBR.scene.local.deleteItems([item.id]);continue;}
   oldByType.set(meta.type,item);
  }
- const palette={stunt:{bg:"#f2c400",fg:"#241d00"},root:{bg:"#a87545",fg:"#000000"},blind:{bg:"#ffffff",fg:"#222222"},silent:{bg:"#f08acb",fg:"#301027"}};
+ const palette={stunt:{bg:"#f2c400",fg:"#241d00"},root:{bg:"#a87545",fg:"#000000"},blind:{bg:"#ffffff",fg:"#222222"},silent:{bg:"#f29cff",fg:"#301027"}};
  const faces=["⚀","⚁","⚂","⚃","⚄","⚅"],add=[];
  for(const [type,die] of wanted){
   const old=oldByType.get(type),roll=Number(die.roll),x=startX+[...wanted.keys()].indexOf(type)*gap;
