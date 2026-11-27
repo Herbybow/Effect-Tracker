@@ -37,7 +37,8 @@ function render(){
  const secondValues=values.filter(e=>["stunt","root","blind","silent"].includes(e.type));
  const thirdValues=values.filter(e=>["gel","esquive"].includes(e.type));
  const fourthEffects=activeEffects.filter(e=>["toucher","critique","resistance"].includes(e.type));
- const hasCurrent=firstEffects.length||secondValues.length||thirdEffects.length||thirdValues.length||fourthEffects.length;
+ const fourthValues=values.filter(e=>e.type==="esquive");
+ const hasCurrent=firstEffects.length||secondValues.length||thirdEffects.length||thirdValues.length||fourthEffects.length||fourthValues.length;
  current.className=hasCurrent?"current-list":"empty";
  if(!item)current.textContent="Assign a character to see its current effects.";
  else if(!hasCurrent)current.textContent="No Effect";
@@ -48,7 +49,7 @@ function render(){
   appendRow(firstEffects.map(effect=>({kind:"charge",effect})),"current-row-one");
   appendRow(secondValues.map(effect=>({kind:"value",effect})),"current-row-two");
   appendRow([...thirdValues.map(effect=>({kind:"value",effect})),...thirdEffects.map(effect=>({kind:"charge",effect}))],"current-row-three");
-  appendRow(fourthEffects.map(effect=>({kind:"charge",effect})),"current-row-four");
+  appendRow([...fourthEffects.map(effect=>({kind:"charge",effect})),...fourthValues.map(effect=>({kind:"value",effect}))],"current-row-four");
  }
  $("bleed-controls").hidden=!full;
  $("third-effect-controls").hidden=!full;
