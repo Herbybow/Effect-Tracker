@@ -132,3 +132,13 @@
 .clear-panel{margin-top:12px}
 .clear-panel .secondary{margin-top:0}
 .current-row-four{margin-top:8px;grid-template-columns:repeat(4,minmax(0,1fr))}
+
+/* Palette refinements requested for the Current panel */
+.effect-horror .tiers button{color:#b9a9ed}
+.effect-toucher,.effect-critique,.effect-resistance{background:#302b35;border-color:#555}
+.value-stunt{background:#403600}
+.value-root{background:#40200f}
+.value-blind{background:#383838}
+.value-silent{background:#48234d}
+.value-gel{background:#163b49}
+.value-effect-column[data-effect="gel"] .value-buttons button.active{outline-color:#4ad5ff}
