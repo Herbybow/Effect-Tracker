@@ -121,7 +121,11 @@
 .modifier-column[data-effect="toucher"] button{border-color:#3399CC;color:#3399CC}
 .modifier-column[data-effect="critique"] button{border-color:#CCCC99;color:#CCCC99}
 .modifier-column[data-effect="resistance"] button{border-color:#CC6666;color:#CC6666}
+.modifier-esquive{margin:12px auto 0;width:calc(33.333% - 6px)}
+.modifier-esquive .value-buttons{grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(2,32px);grid-auto-flow:row;height:64px}
 .value-effect-column[data-effect="esquive"] .value-buttons button{border-color:#669966;color:#669966}
 .value-effect-column[data-effect="esquive"] .value-buttons button.active{background:#203d2d;outline-color:#669966}
 .value-esquive{color:#669966;border-color:#669966}
+.clear-panel{margin-top:12px}
+.clear-panel .secondary{margin-top:0}
 .current-row-four{margin-top:8px}
